@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject._
 import play.api._
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 
 /**
@@ -20,7 +21,13 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
    */
 
   def home() = Action { implicit request: Request[AnyContent] =>
-    Ok(views.html.home())
+    val r = requests.get("http://universities.hipolabs.com/search?country=germany")
+    print("JSONString: " + r.text) // [{}, {}]
+    val jsonList: List[JsValue] = Json.parse(r.text).as[List[JsValue]]
+    val universities: List[JsValue] = jsonList.filter(json => (json \ "name").as[Boolean])
+    print(universities)
+    Ok(r.text)
+    //Ok(views.html.home())
   }
 
   def appreciationSingle() = Action { implicit request: Request[AnyContent] =>

@@ -1,27 +1,62 @@
 @(pageTitle: String = "Anerkennung beim Wechsel in neue Prüfungsordnung")
 
-@main("Antrag") {
-    <!-- Page Content -->
-    <div class="container mt-5">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-lg-12">
-                        <!-- Breadcrumb navigation -->
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="/">Startseite</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">@pageTitle</li>
-                        </ol>
-                    </nav>
+    @main("Antrag") {
+        <!-- Page Content -->
+        <div class="container mt-5">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                            <!-- Breadcrumb navigation -->
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="/">Startseite</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">@pageTitle</li>
+                            </ol>
+                        </nav>
 
-                        <!-- Page content -->
-                    <h1 class="mt">@pageTitle</h1>
+                            <!-- Page content -->
+                        <h1 class="mt">@pageTitle</h1>
 
-                    <br>
-                    <p>Die Seite befindet sich im Aufbau...</p>
+                        <br>
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <strong>Warnung!</strong> Die Seite befindet sich derzeit noch im Aufbau...
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <form>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="firstName">Name</label>
+                                    <input type="text" class="form-control" id="firstName" placeholder="Name">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="lastName">Nachname</label>
+                                    <input type="text" class="form-control" id="lastName" placeholder="Nachname">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-2">
+                                    <label for="matrknr">Matrikelnr.</label>
+                                    <input type="number" min="100000" max="999999" class="form-control" id="matrknr" placeholder="Matrikelnr.">
+                                </div>
+                                <div class="form-group col-md-5">
+                                    <label for="email">Email</label>
+                                    <input type="text" class="form-control" id="email" placeholder="Email">
+                                </div>
+                                <div class="form-group col-md-5">
+                                    <label for="university">Bildungseinrichtung</label>
+                                    <select class="form-control" id="university">
+                                        <option>Hochschule Flensburg</option>
+                                        <option>Europa-Universität Flensburg</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Antrag absenden</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-}
+    }

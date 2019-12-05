@@ -1,3 +1,3 @@
-# scala-anerkennungen
+# GradeNet
 
-A tool to facilitate the recognition of study achievements
+GradeNet is a tool for online recognition of grades when changing the study program or the currently used examination regulations. The tool was developed in the *programming language **Scala*** together with the *framework **Play***. A database is used to store requests and their associated data. There should be an admin area, through which one can manage the appreciations of the students and give them a status that informs about the current status of the appreciation.

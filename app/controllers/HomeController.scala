@@ -1,11 +1,10 @@
 package controllers
 
 import java.nio.file.{Files, Path, Paths}
+import controllers.AppreciationForm._
 import javax.inject._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
-import AppreciationForm._
-import play.api.data.FormError
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -15,16 +14,9 @@ import play.api.data.FormError
 case class UserData(firstName: String, lastName: String, email: String, matrNr: Int, university: Int)
 
 @Singleton
-class HomeController @Inject()(cc: ControllerComponents) extends AbstractController(cc) {
+class HomeController @Inject()(dbController: DatabaseController, cc: ControllerComponents) extends AbstractController(cc) {
 
-  /**
-   * Create an Action to render an HTML page.
-   *
-   * The configuration in the `routes` file means that this method
-   * will be called when the application receives a `GET` request with
-   * a path of `/`.
-   */
-
+  // GET: Landing page
   def home() = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     print("JSONString: " + r.text) // [{}, {}]
@@ -35,14 +27,17 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
     //Ok(views.html.home())
   }
 
+  // GET: Appreciation single grades
   def appreciationSingle() = Action { implicit request: Request[AnyContent] =>
     Ok(views.html.appreciationSingle())
   }
 
+  // GET: Appreciation all grades
   def appreciationAll() = Action { implicit request: Request[AnyContent] =>
     Ok(views.html.appreciationAll())
   }
 
+  // POST: Form appreciation all grades
   var tmpUploadDir: Path = _
   val uploadDir: String = "uploads"
 
@@ -50,7 +45,7 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
     aForm.bindFromRequest.fold(
       errorForm => {
         Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
-        //        BadRequest(views.html.appreciationAll(errorForm))
+//        BadRequest(views.html.appreciationAll(errorForm))
       },
       successForm => {
         request.body
@@ -58,13 +53,15 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
           .map { file =>
             // Only get the last part of the filename without path
             val filename: Path = Paths.get(file.filename).getFileName
-            val r = scala.util.Random
-            val folderId: Int = r.nextInt(100) // must be read dynamically from database last appreciation id
+            var folderId: Long = 0
 
             // Create upload dir, if not exists
             if (!Files.exists(Paths.get(uploadDir))) {
               Files.createDirectory(Paths.get(uploadDir))
             }
+
+            // Create new appreciation
+            folderId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university)
 
             // Create new appreciation dir, if not already exists
             if (!Files.exists(Paths.get(s"$uploadDir/$folderId"))) {
@@ -72,13 +69,6 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
 
               // Upload file in new directory
               file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/$filename"), replace = false)
-
-              // TODO: Read other input fields and push on database
-              println(successForm.firstName)
-              println(successForm.lastName)
-              println(successForm.email)
-              println(successForm.matrNr)
-              println(successForm.university)
 
               // Redirect after successfully transfer all form data
               Redirect(routes.HomeController.appreciationAll).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
@@ -91,14 +81,5 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
           }
       }
     )
-  }
-
-  def convert(text: String, messages: Seq[FormError]): String =
-    """<div class="alert" role="alert">""" + text + formatMessages(messages) + "</div>"
-
-  private def formatMessages(messages: Seq[FormError]): String = {
-    if (messages.size > 0) {
-      "<ul>" + messages.foldLeft("")((res, message) => res + "<li>" + message.message + "</li>") + "</ul>"
-    } else ""
   }
 }

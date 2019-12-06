@@ -1,8 +1,8 @@
 package controllers
 
 object AppreciationForm {
-  import play.api.data.Forms._
   import play.api.data.Form
+  import play.api.data.Forms._
 
   case class Data(firstName: String, lastName: String, email: String, matrNr: Int, university: Int, fileChooser: Option[String])
 

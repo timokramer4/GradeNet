@@ -1,4 +1,5 @@
-@(pageTitle: String = "Anerkennung beim Wechsel in neue Prüfungsordnung")
+
+@()(implicit pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
 
 @main("Antrag") {
     <!-- Page Content -->
@@ -18,10 +19,60 @@
                     <h1 class="mt">@pageTitle</h1>
 
                     <br>
-                    <p>Die Seite befindet sich im Aufbau...</p>
+                    @if(!flash.isEmpty) {
+                        <div class="alert alert-dismissible fade show" id="alert" role="alert">
+                            @if(flash.get("error")) {
+                                <script>document.getElementById("alert").classList.add("alert-danger")</script>
+                            } else if(flash.get("success")){
+                                <script>document.getElementById("alert").classList.add("alert-success")</script>
+                            }
+                            @{if(flash.get("error")) { flash.get("error")} else if (flash.get("success")){flash.get("success")}}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        </div>
+                    }
+                    <form action="@routes.HomeController.appreciationAllPost" method="post" enctype="multipart/form-data">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="firstName">Name</label>
+                                <input type="text" class="form-control" id="firstName" name="firstName" placeholder="Name">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="lastName">Nachname</label>
+                                <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Nachname">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-2">
+                                <label for="matrknr">Matrikelnr.</label>
+                                <input type="number" min="100000" max="999999" class="form-control" id="matrNr" name="matrNr" placeholder="Matrikelnr.">
+                            </div>
+                            <div class="form-group col-md-5">
+                                <label for="email">Email</label>
+                                <input type="text" class="form-control" id="email" name="email" placeholder="Email">
+                            </div>
+                            <div class="form-group col-md-5">
+                                <label for="university">Bildungseinrichtung</label>
+                                <select class="form-control" id="university" name="university">
+                                    <option value="1">Hochschule Flensburg</option>
+                                    <option value="2">Europa-Universität Flensburg</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">Hochladen</span>
+                            </div>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="fileChooser" name="fileChooser">
+                                <label class="custom-file-label" for="fileChooser">Datei auswählen</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Antrag absenden</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+
 
 }

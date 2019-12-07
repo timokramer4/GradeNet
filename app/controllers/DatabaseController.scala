@@ -1,6 +1,7 @@
 package controllers
 
 import anorm.SQL
+import com.typesafe.config.ConfigFactory
 import javax.inject.Inject
 import play.api.db.DBApi
 import play.api.mvc.ControllerComponents
@@ -13,15 +14,29 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   // Check database integrity
   def checkDBIntegrity(): Unit = {
     db.withConnection { implicit c =>
-      var success: Boolean =
-        SQL("CREATE TABLE IF NOT EXISTS appreciation (" +
-          "id INT(11) PRIMARY KEY AUTO_INCREMENT," +
-          "firstName VARCHAR(255) NOT NULL," +
-          "lastName VARCHAR(255) NOT NULL," +
-          "email VARCHAR(255) NOT NULL," +
-          "matrNr INT(11) NOT NULL," +
-          "university INT(11) NOT NULL" +
-          ");").execute()
+      ConfigFactory.load().getString("db.default.driver") match {
+        case "com.mysql.jdbc.Driver" => // MySQL
+          var success: Boolean =
+            SQL("CREATE TABLE IF NOT EXISTS appreciation (" +
+              "id INT(11) PRIMARY KEY AUTO_INCREMENT," +
+              "firstName VARCHAR(255) NOT NULL," +
+              "lastName VARCHAR(255) NOT NULL," +
+              "email VARCHAR(255) NOT NULL," +
+              "matrNr INT(11) NOT NULL," +
+              "university INT(11) NOT NULL" +
+              ");").execute()
+        case "org.postgresql.Driver" => // PostgreSQL
+          var success: Boolean =
+            SQL("CREATE TABLE IF NOT EXISTS appreciation (" +
+              "id SERIAL PRIMARY KEY," +
+              "firstName CHAR(255) NOT NULL," +
+              "lastName CHAR(255) NOT NULL," +
+              "email CHAR(255) NOT NULL," +
+              "matrNr INT NOT NULL," +
+              "university INT NOT NULL" +
+              ");").execute()
+        case _ => println("No database driver selected!")
+      }
     }
   }
 
@@ -39,7 +54,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val id: Option[Long] =
-        SQL(s"insert into Appreciation (firstName, lastName, email, matrNr, university) values ({firstName}, {lastName}, {email}, {matrNr}, {university})")
+        SQL("INSERT INTO Appreciation (firstName, lastName, email, matrNr, university) values ({firstName}, {lastName}, {email}, {matrNr}, {university})")
           .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university)
           .executeInsert()
       return id.getOrElse(0)
@@ -47,12 +62,24 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   }
 
   // Remove specific appreciation
-  def removeAppreciation(id: Long): Unit ={
+  def removeAppreciation(id: Long, decrement: Boolean): Unit = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val amountDelete: Int =
         SQL(s"DELETE FROM appreciation WHERE id = ${id}")
           .executeUpdate()
+      if(decrement){
+        println("CurrentID" + id)
+        ConfigFactory.load().getString("db.default.driver") match {
+          case "com.mysql.jdbc.Driver" => // MySQL
+            val decrementSuccess: Boolean =
+              SQL(s"ALTER TABLE appreciation AUTO_INCREMENT=${if(id>1){id-1}else{id}};").execute()
+          case "org.postgresql.Driver" => // PostgreSQL
+            val decrementSuccess: Boolean =
+              SQL(s"ALTER SEQUENCE appreciation_id_seq RESTART WITH ${if(id>1){id-1}else{id}};").execute()
+          case _ => println("No database driver selected!")
+        }
+      }
     }
   }
 }

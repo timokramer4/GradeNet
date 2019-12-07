@@ -40,7 +40,6 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   // POST: Form appreciation all grades
   var tmpUploadDir: Path = _
   val uploadDir: String = "uploads"
-
   def appreciationAllPost = Action(parse.multipartFormData) { implicit request =>
     aForm.bindFromRequest.fold(
       errorForm => {
@@ -70,13 +69,17 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
               // Upload file in new directory
               file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/$filename"), replace = false)
 
-              // Redirect after successfully transfer all form data
+              // Redirect and show success alert after successfully transfer all form data
               Redirect(routes.HomeController.appreciationAll).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
             } else {
+              // Remove wrong appreciation
+              dbController.removeAppreciation(folderId)
+              // Redirect and show error
               Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Fehler beim Hochladen des Anhangs! Das Verzeichnis existiert bereits. Bitte versuchen Sie es erneut!")
             }
           }
           .getOrElse {
+            // Redirect and show error
             Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Fehlender Anhang. Ein Antrag ohne Anhang ist nicht möglich!")
           }
       }

@@ -1,5 +1,5 @@
 
-@()(implicit pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
+@()(implicit request: RequestHeader, pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
 
 @main("Antrag") {
     <!-- Page Content -->
@@ -31,6 +31,7 @@
                         </div>
                     }
                     <form action="@routes.HomeController.appreciationAllPost" method="post" enctype="multipart/form-data">
+                        @helper.CSRF.formField
                         <div class="form-row">
                             <div class="form-group col-md-6">
                                 <label for="firstName">Name</label>

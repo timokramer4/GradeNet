@@ -88,4 +88,15 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       }
     )
   }
+
+  // GET: Admin panel
+  def adminPanel: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    val data: List[Map[String, Any]] = dbController.getAllAppreciations()
+    data.foreach(appreciation =>
+      for ((k, v) <- appreciation) {
+        printf("key: %s, value: %s\n", k, v)
+      }
+    )
+    Ok(views.html.adminPanel(data))
+  }
 }

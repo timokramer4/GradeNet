@@ -1,6 +1,7 @@
 package controllers
 
-import anorm.SQL
+import anorm.{SQL}
+import anorm.{SqlParser, RowParser}
 import com.typesafe.config.ConfigFactory
 import javax.inject.Inject
 import play.api.db.DBApi
@@ -68,18 +69,47 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       val amountDelete: Int =
         SQL(s"DELETE FROM appreciation WHERE id = ${id}")
           .executeUpdate()
-      if(decrement){
+      if (decrement) {
         println("CurrentID" + id)
         ConfigFactory.load().getString("db.default.driver") match {
           case "com.mysql.jdbc.Driver" => // MySQL
             val decrementSuccess: Boolean =
-              SQL(s"ALTER TABLE appreciation AUTO_INCREMENT=${if(id>1){id-1}else{id}};").execute()
+              SQL(s"ALTER TABLE appreciation AUTO_INCREMENT=${
+                if (id > 1) {
+                  id - 1
+                } else {
+                  id
+                }
+              };").execute()
           case "org.postgresql.Driver" => // PostgreSQL
             val decrementSuccess: Boolean =
-              SQL(s"ALTER SEQUENCE appreciation_id_seq RESTART WITH ${if(id>1){id-1}else{id}};").execute()
+              SQL(s"ALTER SEQUENCE appreciation_id_seq RESTART WITH ${
+                if (id > 1) {
+                  id - 1
+                } else {
+                  id
+                }
+              };").execute()
           case _ => println("No database driver selected!")
         }
       }
+    }
+  }
+
+  // Get all appreciations
+  def getAllAppreciations(): List[Map[String, Any]] = {
+    checkDBIntegrity()
+    db.withConnection { implicit c =>
+      val parser: RowParser[Map[String, Any]] =
+        SqlParser.folder(Map.empty[String, Any]) { (map, value, meta) =>
+          Right(map + (meta.column.qualified -> value))
+        }
+
+      val result: List[Map[String, Any]] = {
+        SQL("SELECT * from appreciation").as(parser.*)
+      }
+
+      return result
     }
   }
 }

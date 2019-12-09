@@ -92,11 +92,27 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   // GET: Admin panel
   def adminPanel: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     val data: List[Map[String, Any]] = dbController.getAllAppreciations()
-    data.foreach(appreciation =>
+    /*data.foreach(appreciation =>
       for ((k, v) <- appreciation) {
         printf("key: %s, value: %s\n", k, v)
       }
-    )
+    )*/
     Ok(views.html.adminPanel(data))
+  }
+
+  // GET: Admin panel details
+  def adminPanelDetails(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    val appreciationData: Map[String, Any] = dbController.getSingleAppreciation(id)
+    val uploadedFiles: List[File] = getListOfFiles(s"$uploadDir/$id")
+    Ok(views.html.adminPanelDetails(appreciationData, uploadedFiles))
+  }
+
+  def getListOfFiles(path: String): List[File] = {
+    val dir = new File(path)
+    if (dir.exists && dir.isDirectory) {
+      dir.listFiles.filter(_.isFile).toList
+    } else {
+      List[File]()
+    }
   }
 }

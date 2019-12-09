@@ -1,7 +1,6 @@
 package controllers
 
-import anorm.{SQL}
-import anorm.{SqlParser, RowParser}
+import anorm.{RowParser, SQL, SqlParser}
 import com.typesafe.config.ConfigFactory
 import javax.inject.Inject
 import play.api.db.DBApi
@@ -110,6 +109,23 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       }
 
       return result
+    }
+  }
+
+  // Get single appreciation
+  def getSingleAppreciation(id: Int): Map[String, Any] = {
+    checkDBIntegrity()
+    db.withConnection { implicit c =>
+      val parser: RowParser[Map[String, Any]] =
+        SqlParser.folder(Map.empty[String, Any]) { (map, value, meta) =>
+          Right(map + (meta.column.qualified -> value))
+        }
+
+      val result: List[Map[String, Any]] = {
+        SQL(s"SELECT * from appreciation WHERE id = ${id}").as(parser.*)
+      }
+
+      return result(0)
     }
   }
 }

@@ -1,5 +1,36 @@
 @(appreciationList: List[Map[String, Any]])(implicit pageTitle: String = "AdminPanel - Dashboard", flash: Flash)
 
+@* Get readable state *@
+@getState(state: Option[Any]) = @{
+    try {
+        val stateInt: Int = state.get.toString.toInt
+        stateInt match {
+            case 0 => "Offen"
+            case 1 => "In Bearbeitung"
+            case 2 => "Terminvereinbarung"
+            case 3 => "Abgeschlossen"
+            case _ =>
+        }
+    } catch {
+        case _: Throwable => println("Casting error!")
+    }
+}
+
+@* Set stateful colors *@
+@setStateColor(state: Option[Any]) = @{
+    try {
+        val stateInt: Int = state.get.toString.toInt
+        stateInt match {
+            case 1 => "table-warning"
+            case 2 => "table-danger"
+            case 3 => "table-success"
+            case _ =>
+        }
+    } catch {
+        case _: Throwable => println("Casting error!")
+    }
+}
+
 @main("AdminPanel") {
     <!-- Page Content -->
     <div class="container mt-5">
@@ -35,16 +66,18 @@
                                 <th scope="col">Nachname</th>
                                 <th scope="col">Matrikelnummer</th>
                                 <th scope="col">Email</th>
+                                <th scope="col">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                         @for(appreciation <- appreciationList) {
-                            <tr class="clickable" data-href='@routes.HomeController.adminPanel/@appreciation.get("appreciation.id")' style="cursor: pointer;">
+                            <tr class="clickable @setStateColor(appreciation.get("appreciation.state"))" data-href='@routes.HomeController.adminPanel/@appreciation.get("appreciation.id")' style="cursor: pointer;">
                                 <th scope="row">@appreciation.get("appreciation.id")</th>
                                 <td>@appreciation.get("appreciation.firstname")</td>
                                 <td>@appreciation.get("appreciation.lastname")</td>
                                 <td>@appreciation.get("appreciation.matrnr")</td>
                                 <td>@appreciation.get("appreciation.email")</td>
+                                <td>@getState(appreciation.get("appreciation.state"))</td>
                             </tr>
                         }
                         </tbody>

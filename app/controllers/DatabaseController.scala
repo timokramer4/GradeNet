@@ -23,7 +23,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               "lastName VARCHAR(255) NOT NULL," +
               "email VARCHAR(255) NOT NULL," +
               "matrNr INT(11) NOT NULL," +
-              "university INT(11) NOT NULL" +
+              "university INT(11) NOT NULL," +
+              "state INT(11) NOT NULL" +
               ");").execute()
         case "org.postgresql.Driver" => // PostgreSQL
           var success: Boolean =
@@ -33,7 +34,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               "lastName CHAR(255) NOT NULL," +
               "email CHAR(255) NOT NULL," +
               "matrNr INT NOT NULL," +
-              "university INT NOT NULL" +
+              "university INT NOT NULL," +
+              "state INT NOT NULL" +
               ");").execute()
         case _ => println("No database driver selected!")
       }
@@ -47,6 +49,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                           email: String,
                           matrNr: Int,
                           university: Int,
+                          state: Int
                          )
 
   // Create new appreciation in database
@@ -54,7 +57,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val id: Option[Long] =
-        SQL("INSERT INTO Appreciation (firstName, lastName, email, matrNr, university) values ({firstName}, {lastName}, {email}, {matrNr}, {university})")
+        SQL("INSERT INTO Appreciation (firstName, lastName, email, matrNr, university, state) values ({firstName}, {lastName}, {email}, {matrNr}, {university}, 0)")
           .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university)
           .executeInsert()
       return id.getOrElse(0)

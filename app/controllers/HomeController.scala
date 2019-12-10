@@ -2,10 +2,13 @@ package controllers
 
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
+
 import controllers.AppreciationForm._
 import javax.inject._
-import play.api.libs.json.{JsValue, Json}
+import models.Student
+import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
+
 import scala.reflect.io.Directory
 
 /**
@@ -20,13 +23,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   // GET: Landing page
   def home() = Action { implicit request: Request[AnyContent] =>
-    val r = requests.get("http://universities.hipolabs.com/search?country=germany")
-    print("JSONString: " + r.text) // [{}, {}]
-    val jsonList: List[JsValue] = Json.parse(r.text).as[List[JsValue]]
-    val universities: List[JsValue] = jsonList.filter(json => (json \ "name").as[Boolean])
-    print(universities)
-    Ok(r.text)
-    //Ok(views.html.home())
+    Ok(views.html.home())
   }
 
   // GET: Appreciation single grades
@@ -36,7 +33,19 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   // GET: Appreciation all grades
   def appreciationAll() = Action { implicit request: Request[AnyContent] =>
-    Ok(views.html.appreciationAll())
+    val r = requests.get("http://universities.hipolabs.com/search?country=germany")
+    val rawData: JsValue = Json.parse(r.text)
+    rawData match {
+      case a: JsArray => {
+        var unis: List[Map[String, String]] = Nil
+        for (i <- 0 to a.value.size-1) {
+          unis = List(Map("id" -> i.toString(), "name" -> a(i).apply("name").as[String])).:::(unis)
+        }
+        println(unis)
+        Ok(views.html.appreciationAll(unis));
+      }
+      case _ => Ok(views.html.home())
+    }
   }
 
   // POST: Form appreciation all grades
@@ -91,18 +100,13 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   // GET: Admin panel
   def adminPanel: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    val data: List[Map[String, Any]] = dbController.getAllAppreciations()
-    /*data.foreach(appreciation =>
-      for ((k, v) <- appreciation) {
-        printf("key: %s, value: %s\n", k, v)
-      }
-    )*/
+    val data: List[Student] = dbController.getAllAppreciations()
     Ok(views.html.adminPanel(data))
   }
 
   // GET: Admin panel details
   def adminPanelDetails(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    val appreciationData: Map[String, Any] = dbController.getSingleAppreciation(id)
+    val appreciationData: Student = dbController.getSingleAppreciation(id)
     val uploadedFiles: List[File] = getListOfFiles(s"$uploadDir/$id")
     Ok(views.html.adminPanelDetails(appreciationData, uploadedFiles))
   }

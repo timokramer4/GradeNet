@@ -1,7 +1,10 @@
 @import java.io.File
-@(appreciation: Map[String, Any], files: List[File])(implicit pageTitle: String = "Antrag", flash: Flash)
+@(appreciation: Student, files: List[File])(implicit pageTitle: String = "Antrag", flash: Flash)
 
-@* Format file size *@
+@import models.State._
+@import models.Student._
+
+    @* Format file size *@
 @formatSize(size: Long) = @{
     if(size >= 1000000000) {
         (size / 1000000000) + " GB"
@@ -11,37 +14,6 @@
         (size / 1000) + " KB"
     } else {
         size + " Byte"
-    }
-}
-
-@* Get readable state *@
-@getState(state: Option[Any]) = @{
-    try {
-        val stateInt: Int = state.get.toString.toInt
-        stateInt match {
-            case 0 => "Offen"
-            case 1 => "In Bearbeitung"
-            case 2 => "Terminvereinbarung"
-            case 3 => "Abgeschlossen"
-            case _ =>
-        }
-    } catch {
-        case _: Throwable => println("Casting error!")
-    }
-}
-
-@* Set stateful colors *@
-@setStateColor(state: Option[Any]) = @{
-    try {
-        val stateInt: Int = state.get.toString.toInt
-        stateInt match {
-            case 1 => "text-warning"
-            case 2 => "text-danger"
-            case 3 => "text-success"
-            case _ =>
-        }
-    } catch {
-        case _: Throwable => println("Casting error!")
     }
 }
 
@@ -58,8 +30,8 @@
                                 <i class="fas fa-chevron-left"></i>
                             </a>
                         </div>
-                        <h1 class="mr-3">@pageTitle #@appreciation.get("appreciation.id")</h1>
-                        <h5>(<i class="@setStateColor(appreciation.get("appreciation.state"))">@getState(appreciation.get("appreciation.state"))</i>)</h5>
+                        <h1 class="mr-3">@pageTitle #@getString(appreciation, "id")</h1>
+                        <h5>(<i class="@stateColor(getState(appreciation))">@stateToString(getState(appreciation))</i>)</h5>
                     </div>
 
                     <br>
@@ -92,19 +64,19 @@
                         <tbody>
                             <tr>
                                 <th scope="row">Vorname</th>
-                                <td>@appreciation.get("appreciation.firstname")</td>
+                                <td>@getString(appreciation, "firstName")</td>
                             </tr>
                             <tr>
                                 <th scope="row">Nachname</th>
-                                <td>@appreciation.get("appreciation.lastname")</td>
+                                <td>@getString(appreciation, "lastName")</td>
                             </tr>
                             <tr>
                                 <th scope="row">Matrikelnummer</th>
-                                <td>@appreciation.get("appreciation.matrnr")</td>
+                                <td>@getString(appreciation, "matrNr")</td>
                             </tr>
                             <tr>
                                 <th scope="row">Email</th>
-                                <td>@appreciation.get("appreciation.email")</td>
+                                <td>@getString(appreciation, "email")</td>
                             </tr>
                         </tbody>
                     </table>

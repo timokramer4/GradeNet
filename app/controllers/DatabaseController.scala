@@ -1,8 +1,12 @@
 package controllers
 
-import anorm.{RowParser, SQL, SqlParser}
+import anorm.{RowParser, SQL}
+import anorm.SqlParser._
+import anorm._
 import com.typesafe.config.ConfigFactory
 import javax.inject.Inject
+import models.Student
+import models.State._
 import play.api.db.DBApi
 import play.api.mvc.ControllerComponents
 
@@ -99,15 +103,15 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   }
 
   // Get all appreciations
-  def getAllAppreciations(): List[Map[String, Any]] = {
+  def getAllAppreciations(): List[Student] = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
-      val parser: RowParser[Map[String, Any]] =
-        SqlParser.folder(Map.empty[String, Any]) { (map, value, meta) =>
-          Right(map + (meta.column.qualified -> value))
+      val parser: RowParser[Student] =
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ int("university") ~ int("state") map {
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => new Student(id, fn, ln, mnr, email, uni, intToState(state))
         }
 
-      val result: List[Map[String, Any]] = {
+      val result: List[Student] = {
         SQL("SELECT * from appreciation").as(parser.*)
       }
 
@@ -116,15 +120,17 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   }
 
   // Get single appreciation
-  def getSingleAppreciation(id: Int): Map[String, Any] = {
+  def getSingleAppreciation(id: Int): Student = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
-      val parser: RowParser[Map[String, Any]] =
-        SqlParser.folder(Map.empty[String, Any]) { (map, value, meta) =>
-          Right(map + (meta.column.qualified -> value))
+      val parser: RowParser[Student] = {
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ int("university") ~ int("state") map {
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => new Student(id, fn, ln, mnr, email, uni, intToState(state))
         }
+      }
 
-      val result: List[Map[String, Any]] = {
+
+      val result: List[Student] = {
         SQL(s"SELECT * from appreciation WHERE id = ${id}").as(parser.*)
       }
 

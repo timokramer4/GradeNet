@@ -1,8 +1,12 @@
 package controllers
 
-import anorm.SQL
+import anorm.{RowParser, SQL}
+import anorm.SqlParser._
+import anorm._
 import com.typesafe.config.ConfigFactory
 import javax.inject.Inject
+import models.Student
+import models.State._
 import play.api.db.DBApi
 import play.api.mvc.ControllerComponents
 
@@ -23,7 +27,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               "lastName VARCHAR(255) NOT NULL," +
               "email VARCHAR(255) NOT NULL," +
               "matrNr INT(11) NOT NULL," +
-              "university INT(11) NOT NULL" +
+              "university INT(11) NOT NULL," +
+              "state INT(11) NOT NULL" +
               ");").execute()
         case "org.postgresql.Driver" => // PostgreSQL
           var success: Boolean =
@@ -33,7 +38,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               "lastName CHAR(255) NOT NULL," +
               "email CHAR(255) NOT NULL," +
               "matrNr INT NOT NULL," +
-              "university INT NOT NULL" +
+              "university INT NOT NULL," +
+              "state INT NOT NULL" +
               ");").execute()
         case _ => println("No database driver selected!")
       }
@@ -47,6 +53,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                           email: String,
                           matrNr: Int,
                           university: Int,
+                          state: Int
                          )
 
   // Create new appreciation in database
@@ -54,7 +61,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val id: Option[Long] =
-        SQL("INSERT INTO Appreciation (firstName, lastName, email, matrNr, university) values ({firstName}, {lastName}, {email}, {matrNr}, {university})")
+        SQL("INSERT INTO Appreciation (firstName, lastName, email, matrNr, university, state) values ({firstName}, {lastName}, {email}, {matrNr}, {university}, 0)")
           .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university)
           .executeInsert()
       return id.getOrElse(0)
@@ -68,18 +75,66 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       val amountDelete: Int =
         SQL(s"DELETE FROM appreciation WHERE id = ${id}")
           .executeUpdate()
-      if(decrement){
+      if (decrement) {
         println("CurrentID" + id)
         ConfigFactory.load().getString("db.default.driver") match {
           case "com.mysql.jdbc.Driver" => // MySQL
             val decrementSuccess: Boolean =
-              SQL(s"ALTER TABLE appreciation AUTO_INCREMENT=${if(id>1){id-1}else{id}};").execute()
+              SQL(s"ALTER TABLE appreciation AUTO_INCREMENT=${
+                if (id > 1) {
+                  id - 1
+                } else {
+                  id
+                }
+              };").execute()
           case "org.postgresql.Driver" => // PostgreSQL
             val decrementSuccess: Boolean =
-              SQL(s"ALTER SEQUENCE appreciation_id_seq RESTART WITH ${if(id>1){id-1}else{id}};").execute()
+              SQL(s"ALTER SEQUENCE appreciation_id_seq RESTART WITH ${
+                if (id > 1) {
+                  id - 1
+                } else {
+                  id
+                }
+              };").execute()
           case _ => println("No database driver selected!")
         }
       }
+    }
+  }
+
+  // Get all appreciations
+  def getAllAppreciations(): List[Student] = {
+    checkDBIntegrity()
+    db.withConnection { implicit c =>
+      val parser: RowParser[Student] =
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ int("university") ~ int("state") map {
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => new Student(id, fn, ln, mnr, email, uni, intToState(state))
+        }
+
+      val result: List[Student] = {
+        SQL("SELECT * from appreciation").as(parser.*)
+      }
+
+      return result
+    }
+  }
+
+  // Get single appreciation
+  def getSingleAppreciation(id: Int): Student = {
+    checkDBIntegrity()
+    db.withConnection { implicit c =>
+      val parser: RowParser[Student] = {
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ int("university") ~ int("state") map {
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => new Student(id, fn, ln, mnr, email, uni, intToState(state))
+        }
+      }
+
+
+      val result: List[Student] = {
+        SQL(s"SELECT * from appreciation WHERE id = ${id}").as(parser.*)
+      }
+
+      return result(0)
     }
   }
 }

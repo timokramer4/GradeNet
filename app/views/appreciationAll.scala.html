@@ -1,5 +1,5 @@
 
-@()(implicit pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
+@(uniList: List[Map[String, String]])(implicit request: RequestHeader, pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
 
 @main("Antrag") {
     <!-- Page Content -->
@@ -31,6 +31,7 @@
                         </div>
                     }
                     <form action="@routes.HomeController.appreciationAllPost" method="post" enctype="multipart/form-data">
+                        @helper.CSRF.formField
                         <div class="form-row">
                             <div class="form-group col-md-6">
                                 <label for="firstName">Name</label>
@@ -53,8 +54,9 @@
                             <div class="form-group col-md-5">
                                 <label for="university">Bildungseinrichtung</label>
                                 <select class="form-control" id="university" name="university">
-                                    <option value="1">Hochschule Flensburg</option>
-                                    <option value="2">Europa-Universität Flensburg</option>
+                                    @for(uni <- uniList){
+                                        <option value='@uni.get("id")'>@uni.get("name")</option>
+                                    }
                                 </select>
                             </div>
                         </div>
@@ -73,6 +75,4 @@
             </div>
         </div>
     </div>
-
-
 }

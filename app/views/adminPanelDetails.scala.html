@@ -1,110 +1,124 @@
 @import java.io.File
-@(appreciation: Student, files: List[File])(implicit pageTitle: String = "Antrag", flash: Flash)
+@(appreciation: Student, files: List[File], stateList: List[Int])(implicit pageTitle: String = "Antrag", flash: Flash)
 
-@import models.State._
-@import models.Student._
+    @import models.State._
+    @import models.Student._
 
-    @* Format file size *@
-@formatSize(size: Long) = @{
-    if(size >= 1000000000) {
-        (size / 1000000000) + " GB"
-    } else if(size >= 1000000) {
-        (size / 1000000) + " MB"
-    } else if(size >= 1000) {
-        (size / 1000) + " KB"
-    } else {
-        size + " Byte"
+        @* Format file size *@
+    @formatSize(size: Long) = @{
+        if(size >= 1000000000) {
+            (size / 1000000000) + " GB"
+        } else if(size >= 1000000) {
+            (size / 1000000) + " MB"
+        } else if(size >= 1000) {
+            (size / 1000) + " KB"
+        } else {
+            size + " Byte"
+        }
     }
-}
 
-@main("AdminPanel") {
-    <!-- Page Content -->
-    <div class="container mt-5">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-lg-12">
-                        <!-- Page content -->
-                    <div class="input-group mb-2 align-items-center">
-                        <div class='btn-toolbar pull-left' style="margin-right: 1em;">
-                            <a href="@routes.HomeController.adminPanel" class="btn btn-primary" role="button">
-                                <i class="fas fa-chevron-left"></i>
-                            </a>
+    @main("AdminPanel") {
+        <!-- Page Content -->
+        <div class="container mt-5">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                            <!-- Page content -->
+                        <div class="input-group mb-2 align-items-center">
+                            <div class='btn-toolbar pull-left' style="margin-right: 1em;">
+                                <a href="@routes.HomeController.adminPanel" class="btn btn-primary" role="button">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </div>
+                            <h1 class="mr-3">@pageTitle #@getString(appreciation, "id")</h1>
+                            <h5>(<i class="@stateColor(getState(appreciation))">@stateToString(getState(appreciation))</i>)</h5>
                         </div>
-                        <h1 class="mr-3">@pageTitle #@getString(appreciation, "id")</h1>
-                        <h5>(<i class="@stateColor(getState(appreciation))">@stateToString(getState(appreciation))</i>)</h5>
-                    </div>
 
-                    <br>
-                    @if(!flash.isEmpty) {
-                        <div class="alert alert-dismissible fade show" id="alert" role="alert">
-                            @if(flash.get("error")) {
-                                <script>document.getElementById("alert").classList.add("alert-danger")</script>
-                            } else if(flash.get("success")){
-                            <script>document.getElementById("alert").classList.add("alert-success")</script>
-                            }
-                            @{
-                                if(flash.get("error")) {
-                                    flash.get("error")
-                                } else if(flash.get("success")) {
-                                    flash.get("success")
+                        <br>
+                        @if(!flash.isEmpty) {
+                            <div class="alert alert-dismissible fade show" id="alert" role="alert">
+                                @if(flash.get("error")) {
+                                    <script>document.getElementById("alert").classList.add("alert-danger")</script>
+                                } else if(flash.get("success")){
+                                <script>document.getElementById("alert").classList.add("alert-success")</script>
                                 }
-                            }
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        </div>
-                    }
-
-                    <h3>Infos über den Antragsteller</h3>
-                    <table class="table table-striped table-hover" with="100%">
-                        <thead class="thead-dark">
-                            <tr>
-                                <th scope="col">Feld</th>
-                                <th scope="col">Inhalt</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <th scope="row">Vorname</th>
-                                <td>@getString(appreciation, "firstName")</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Nachname</th>
-                                <td>@getString(appreciation, "lastName")</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Matrikelnummer</th>
-                                <td>@getString(appreciation, "matrNr")</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Email</th>
-                                <td>@getString(appreciation, "email")</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <br>
-                    <h3>Hochgeladene Dateien</h3>
-                    <table class="table table-striped table-hover dataTable" with="100%">
-                        <thead class="thead-dark">
-                            <tr>
-                                <th scope="col">Name</th>
-                                <th scope="col">Größe</th>
-                                <th scope="col">Aktion</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        @for(file <- files) {
-                            <tr>
-                                <th>@file.getName()</th>
-                                <td>@formatSize(file.length)</td>
-                                <td></td>
-                            </tr>
+                                @{
+                                    if(flash.get("error")) {
+                                        flash.get("error")
+                                    } else if(flash.get("success")) {
+                                        flash.get("success")
+                                    }
+                                }
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            </div>
                         }
-                        </tbody>
-                    </table>
+
+                        <h3>Infos über den Antragsteller</h3>
+                        <table class="table table-striped table-hover" with="100%">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col">Feld</th>
+                                    <th scope="col">Inhalt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th scope="row">Vorname</th>
+                                    <td>@getString(appreciation, "firstName")</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Nachname</th>
+                                    <td>@getString(appreciation, "lastName")</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Matrikelnummer</th>
+                                    <td>@getString(appreciation, "matrNr")</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Email</th>
+                                    <td>@getString(appreciation, "email")</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Status</th>
+                                    <td>
+                                        <form class="form-inline">
+                                            <select class="custom-select m-1">
+                                            @for(state <- stateList) {
+                                                <p>@state == @switchStateInt(getState(appreciation))</p>
+                                                <option value="@state" @if(state == switchStateInt(getState(appreciation)).asInstanceOf[Int]){selected}>@stateToString(state)</option>
+                                            }
+                                            </select>
+                                            <button type="submit" class="btn btn-primary">Antrag absenden</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <br>
+                        <h3>Hochgeladene Dateien</h3>
+                        <table class="table table-striped table-hover dataTable" with="100%">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Größe</th>
+                                    <th scope="col">Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @for(file <- files) {
+                                <tr>
+                                    <th>@file.getName()</th>
+                                    <td>@formatSize(file.length)</td>
+                                    <td></td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
 
-}
+    }

@@ -54,6 +54,7 @@
                             <div class="form-group col-md-5">
                                 <label for="university">Bildungseinrichtung</label>
                                 <select class="form-control" id="university" name="university">
+                                    <option selected disabled>Bildungseinrichtung wählen</option>
                                     @for(uni <- uniList){
                                         <option value='@uni.get("id")'>@uni.get("name")</option>
                                     }

@@ -5,6 +5,7 @@ import java.nio.file.{Files, Path, Paths}
 
 import controllers.AppreciationForm._
 import javax.inject._
+import models.State._
 import models.Student
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
@@ -108,7 +109,8 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def adminPanelDetails(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     val appreciationData: Student = dbController.getSingleAppreciation(id)
     val uploadedFiles: List[File] = getListOfFiles(s"$uploadDir/$id")
-    Ok(views.html.adminPanelDetails(appreciationData, uploadedFiles))
+    val stateList: List[Int] = getStateList()
+    Ok(views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList))
   }
 
   def getListOfFiles(path: String): List[File] = {

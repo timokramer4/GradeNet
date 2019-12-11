@@ -5,7 +5,7 @@ import anorm.SqlParser._
 import anorm._
 import com.typesafe.config.ConfigFactory
 import javax.inject.Inject
-import models.Student
+import models.{State, Student}
 import models.State._
 import play.api.db.DBApi
 import play.api.mvc.ControllerComponents
@@ -108,7 +108,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     db.withConnection { implicit c =>
       val parser: RowParser[Student] =
         int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ int("university") ~ int("state") map {
-          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => new Student(id, fn, ln, mnr, email, uni, intToState(state))
+            case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => new Student(id, fn, ln, mnr, email, uni, switchStateInt(state).asInstanceOf[State])
         }
 
       val result: List[Student] = {
@@ -125,7 +125,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     db.withConnection { implicit c =>
       val parser: RowParser[Student] = {
         int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ int("university") ~ int("state") map {
-          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => new Student(id, fn, ln, mnr, email, uni, intToState(state))
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => new Student(id, fn, ln, mnr, email, uni, switchStateInt(state).asInstanceOf[State])
         }
       }
 

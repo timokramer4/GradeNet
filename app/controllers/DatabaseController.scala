@@ -61,10 +61,21 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val id: Option[Long] =
-        SQL("INSERT INTO Appreciation (firstName, lastName, email, matrNr, university, state) values ({firstName}, {lastName}, {email}, {matrNr}, {university}, 0)")
+        SQL("INSERT INTO appreciation (firstName, lastName, email, matrNr, university, state) values ({firstName}, {lastName}, {email}, {matrNr}, {university}, 0)")
           .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university)
           .executeInsert()
       return id.getOrElse(0)
+    }
+  }
+
+  // Change state of existing appreciation
+  def changeAppreciationState(id: Int, state: Int): Long ={
+    checkDBIntegrity()
+    db.withConnection { implicit c =>
+      val amountUpdated: Int =
+        SQL(s"UPDATE appreciation SET state = ${state} WHERE id = ${id}")
+          .executeUpdate()
+      return amountUpdated
     }
   }
 

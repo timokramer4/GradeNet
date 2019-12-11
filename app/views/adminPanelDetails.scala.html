@@ -1,5 +1,5 @@
 @import java.io.File
-@(appreciation: Student, files: List[File], stateList: List[Int])(implicit pageTitle: String = "Antrag", flash: Flash)
+@(appreciation: Student, files: List[File], stateList: List[Int])(implicit request: RequestHeader, pageTitle: String = "Antrag", flash: Flash)
 
     @import models.State._
     @import models.Student._
@@ -81,14 +81,14 @@
                                 <tr>
                                     <th scope="row">Status</th>
                                     <td>
-                                        <form class="form-inline">
-                                            <select class="custom-select m-1">
+                                        <form action="@routes.HomeController.adminPanelDetailsChangeState(getId(appreciation))" method="POST" class="form-inline">
+                                            @helper.CSRF.formField
+                                            <select class="custom-select m-1" id="state" name="state">
                                             @for(state <- stateList) {
-                                                <p>@state == @switchStateInt(getState(appreciation))</p>
-                                                <option value="@state" @if(state == switchStateInt(getState(appreciation)).asInstanceOf[Int]){selected}>@stateToString(state)</option>
+                                                <option value="@state" @if(state ==switchStateInt(getState(appreciation)).asInstanceOf[Int]){selected}>@stateToString(state)</option>
                                             }
                                             </select>
-                                            <button type="submit" class="btn btn-primary">Antrag absenden</button>
+                                            <button type="submit" class="btn btn-primary">Speichern</button>
                                         </form>
                                     </td>
                                 </tr>

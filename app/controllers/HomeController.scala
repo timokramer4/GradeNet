@@ -4,6 +4,7 @@ import java.io.File
 import java.nio.file.{Files, Path, Paths}
 
 import controllers.AppreciationForm._
+import controllers.StateForm._
 import javax.inject._
 import models.State._
 import models.Student
@@ -42,7 +43,6 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         for (i <- 0 to a.value.size-1) {
           unis = List(Map("id" -> i.toString(), "name" -> a(i).apply("name").as[String])).:::(unis)
         }
-        println(unis)
         Ok(views.html.appreciationAll(unis));
       }
       case _ => Ok(views.html.home())
@@ -111,6 +111,22 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     val uploadedFiles: List[File] = getListOfFiles(s"$uploadDir/$id")
     val stateList: List[Int] = getStateList()
     Ok(views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList))
+  }
+
+  // POST: Change appreciation state
+  def adminPanelDetailsChangeState(id: Int) = Action(parse.anyContent) { implicit request =>
+    stateForm.bindFromRequest.fold(
+      errorForm => {
+        Redirect(routes.HomeController.adminPanelDetails(id)).flashing("error" -> "Fehler beim Ändern des Status!")
+      },
+      successForm => {
+        // Change state in database
+        dbController.changeAppreciationState(id, successForm.state)
+
+        // Redirect after change and show changes
+        Redirect(routes.HomeController.adminPanelDetails(id)).flashing("success" -> s"""Status von Antrag #${id} wurde erfolgreich auf "${stateToString(successForm.state)}" geändert!""")
+      }
+    )
   }
 
   def getListOfFiles(path: String): List[File] = {

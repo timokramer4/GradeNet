@@ -22,4 +22,7 @@ object Student {
 
   def getState(student: Student): State =
     student.state
+
+  def getId(student: Student): Int =
+    student.id
 }

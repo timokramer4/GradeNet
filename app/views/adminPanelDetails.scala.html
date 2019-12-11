@@ -107,7 +107,7 @@
                             </thead>
                             <tbody>
                             @for(file <- files) {
-                                <tr>
+                                <tr class="clickable" data-href='@routes.HomeController.downloadFile(getId(appreciation), file.getName())' style="cursor: pointer;">
                                     <th>@file.getName()</th>
                                     <td>@formatSize(file.length)</td>
                                     <td></td>
@@ -115,6 +115,13 @@
                             }
                             </tbody>
                         </table>
+                        <a class="btn btn-primary float-right mt-3" href="#" role="button">Alle Dateien herunterladen</a>
+                        <script>
+                                // Clickable table rows
+                                $(".clickable").click(function () {
+                                    window.location = this.getAttribute("data-href");
+                                });
+                        </script>
                     </div>
                 </div>
             </div>

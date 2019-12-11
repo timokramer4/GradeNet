@@ -11,6 +11,7 @@ import models.Student
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
 
+import scala.concurrent.ExecutionContext
 import scala.reflect.io.Directory
 
 /**
@@ -40,7 +41,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     rawData match {
       case a: JsArray => {
         var unis: List[Map[String, String]] = Nil
-        for (i <- 0 to a.value.size-1) {
+        for (i <- 0 to a.value.size - 1) {
           unis = List(Map("id" -> i.toString(), "name" -> a(i).apply("name").as[String])).:::(unis)
         }
         Ok(views.html.appreciationAll(unis));
@@ -129,6 +130,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     )
   }
 
+  // Return list of all files
   def getListOfFiles(path: String): List[File] = {
     val dir = new File(path)
     if (dir.exists && dir.isDirectory) {
@@ -136,5 +138,15 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     } else {
       List[File]()
     }
+  }
+
+  // GET: Download a specific file
+  def downloadFile(id: Int, fileName: String): Action[AnyContent] = Action {
+    implicit val ec = ExecutionContext.global
+    Ok.sendFile(
+      content = new java.io.File(s"${uploadDir}/${id}/${fileName}"),
+      fileName = _ => s"Antrag#${id}_${fileName}",
+      inline = true
+    )
   }
 }

@@ -2,15 +2,15 @@ package controllers
 
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
-
-import controllers.AppreciationForm._
-import controllers.StateForm._
+import controllers.Forms.AppreciationForm._
+import controllers.Forms.StateForm._
+import controllers.Forms.LoginForm._
 import javax.inject._
 import models.State._
-import models.Student
+import models.{Student, User}
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
-
+import controllers.Hasher.generateHash
 import scala.concurrent.ExecutionContext
 import scala.reflect.io.Directory
 
@@ -100,10 +100,41 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     )
   }
 
+  // GET: Login page
+  def loginPage: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    Ok(views.html.login())
+  }
+
+  // POST: Login user
+  def loginUser = Action(parse.anyContent) { implicit request =>
+    loginForm.bindFromRequest.fold(
+      errorForm => {
+        Redirect(routes.HomeController.loginPage()).flashing("error" -> "Fehlende Angaben!")
+      },
+      successForm => {
+        val user: User = dbController.getUser(successForm.username)
+        val passInput: String = generateHash(successForm.password)
+        println("Input Hash: " + passInput)
+        println("DB Hash: " + user.password)
+        if (user.password == passInput) {
+          println("Angemeldet!")
+          Redirect(routes.HomeController.adminPanel()).withSession("connected" -> user.username)
+        } else {
+          println("Zugang verweigert!")
+          Redirect(routes.HomeController.loginPage()).flashing("error" -> "Benutzername oder Passwort falsch!")
+        }
+      }
+    )
+  }
+
   // GET: Admin panel
   def adminPanel: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    val data: List[Student] = dbController.getAllAppreciations()
-    Ok(views.html.adminPanel(data))
+    if (checkLogin(request)) {
+      val data: List[Student] = dbController.getAllAppreciations()
+      Ok(views.html.adminPanel(data))
+    } else {
+      Redirect(routes.HomeController.loginPage())
+    }
   }
 
   // GET: Admin panel details
@@ -116,18 +147,22 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   // POST: Change appreciation state
   def adminPanelDetailsChangeState(id: Int) = Action(parse.anyContent) { implicit request =>
-    stateForm.bindFromRequest.fold(
-      errorForm => {
-        Redirect(routes.HomeController.adminPanelDetails(id)).flashing("error" -> "Fehler beim Ändern des Status!")
-      },
-      successForm => {
-        // Change state in database
-        dbController.changeAppreciationState(id, successForm.state)
+    if (checkLogin(request)) {
+      stateForm.bindFromRequest.fold(
+        errorForm => {
+          Redirect(routes.HomeController.adminPanelDetails(id)).flashing("error" -> "Fehler beim Ändern des Status!")
+        },
+        successForm => {
+          // Change state in database
+          dbController.changeAppreciationState(id, successForm.state)
 
-        // Redirect after change and show changes
-        Redirect(routes.HomeController.adminPanelDetails(id)).flashing("success" -> s"""Status von Antrag #${id} wurde erfolgreich auf "${stateToString(successForm.state)}" geändert!""")
-      }
-    )
+          // Redirect after change and show changes
+          Redirect(routes.HomeController.adminPanelDetails(id)).flashing("success" -> s"""Status von Antrag #${id} wurde erfolgreich auf "${stateToString(successForm.state)}" geändert!""")
+        }
+      )
+    } else {
+      Redirect(routes.HomeController.loginPage())
+    }
   }
 
   // Return list of all files
@@ -148,5 +183,15 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       fileName = _ => s"Antrag#${id}_${fileName}",
       inline = true
     )
+  }
+
+  def checkLogin(request: Request[AnyContent]): Boolean = {
+    request.session
+      .get("connected")
+      .map { loggedUser =>
+        return true
+      }.getOrElse {
+      return false
+    }
   }
 }

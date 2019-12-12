@@ -1,4 +1,4 @@
-package controllers
+package controllers.Forms
 
 object AppreciationForm {
   import play.api.data.Form

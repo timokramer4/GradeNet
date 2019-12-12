@@ -7,13 +7,13 @@
         @* Format file size *@
     @formatSize(size: Long) = @{
         if(size >= 1000000000) {
-            (size / 1000000000) + " GB"
+            s"${(size / 1000000000)} GB"
         } else if(size >= 1000000) {
-            (size / 1000000) + " MB"
+            s"${(size / 1000000)} MB"
         } else if(size >= 1000) {
-            (size / 1000) + " KB"
+            s"${(size / 1000)} KB"
         } else {
-            size + " Byte"
+            s"${size} Byte"
         }
     }
 

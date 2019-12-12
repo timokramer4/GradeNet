@@ -1,4 +1,4 @@
-package controllers
+package controllers.Forms
 
 object StateForm {
   import play.api.data.Form

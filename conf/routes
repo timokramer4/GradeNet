@@ -3,13 +3,17 @@
 # ~~~~
 
 # An example controller showing a sample home page
-GET     /                           controllers.HomeController.home
-GET     /appreciationSingle         controllers.HomeController.appreciationSingle
-GET     /appreciationAll            controllers.HomeController.appreciationAll
-POST    /appreciationAll            controllers.HomeController.appreciationAllPost
+GET     /                                   controllers.HomeController.home
+GET     /appreciationSingle                 controllers.HomeController.appreciationSingle
+GET     /appreciationAll                    controllers.HomeController.appreciationAll
+POST    /appreciationAll                    controllers.HomeController.appreciationAllPost
 
-GET     /admin                      controllers.HomeController.adminPanel
-GET     /admin/$id<[0-9]+>          controllers.HomeController.adminPanelDetails(id: Int)
+GET     /login                              controllers.HomeController.loginPage
+POST    /login                              controllers.HomeController.loginUser
+GET     /admin                              controllers.HomeController.adminPanel
+GET     /admin/$id<[0-9]+>                  controllers.HomeController.adminPanelDetails(id: Int)
+POST    /admin/$id<[0-9]+>                  controllers.HomeController.adminPanelDetailsChangeState(id: Int)
+GET     /download/$id<[0-9]+>/:fileName     controllers.HomeController.downloadFile(id: Int, fileName: String)
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.versioned(file)
+GET     /assets/*file                       controllers.Assets.versioned(file)

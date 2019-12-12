@@ -44,7 +44,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         for (i <- 0 to a.value.size - 1) {
           unis = List(Map("id" -> i.toString(), "name" -> a(i).apply("name").as[String])).:::(unis)
         }
-        Ok(views.html.appreciationAll(unis));
+        Ok(views.html.appreciationAll(unis))
       }
       case _ => Ok(views.html.home())
     }

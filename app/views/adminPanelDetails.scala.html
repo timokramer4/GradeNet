@@ -1,5 +1,5 @@
 @import java.io.File
-@(appreciation: Student, files: List[File], stateList: List[Int])(implicit request: RequestHeader, pageTitle: String = "Antrag", flash: Flash)
+@(appreciation: Student, files: List[File], stateList: List[Int])(implicit requestHeader: RequestHeader, pageTitle: String = "Antrag", flash: Flash)
 
     @import models.State._
     @import models.Student._

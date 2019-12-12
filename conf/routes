@@ -10,6 +10,8 @@ POST    /appreciationAll                    controllers.HomeController.appreciat
 
 GET     /login                              controllers.HomeController.loginPage
 POST    /login                              controllers.HomeController.loginUser
+GET     /logout                              controllers.HomeController.logout
+
 GET     /admin                              controllers.HomeController.adminPanel
 GET     /admin/$id<[0-9]+>                  controllers.HomeController.adminPanelDetails(id: Int)
 POST    /admin/$id<[0-9]+>                  controllers.HomeController.adminPanelDetailsChangeState(id: Int)

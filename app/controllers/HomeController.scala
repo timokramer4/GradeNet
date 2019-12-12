@@ -2,6 +2,7 @@ package controllers
 
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
+
 import controllers.Forms.AppreciationForm._
 import controllers.Forms.StateForm._
 import controllers.Forms.LoginForm._
@@ -9,8 +10,9 @@ import javax.inject._
 import models.State._
 import models.{Student, User}
 import play.api.libs.json.{JsArray, JsValue, Json}
-import play.api.mvc._
+import play.api.mvc.{AnyContent, _}
 import controllers.Hasher.generateHash
+
 import scala.concurrent.ExecutionContext
 import scala.reflect.io.Directory
 
@@ -18,8 +20,6 @@ import scala.reflect.io.Directory
  * This controller creates an `Action` to handle HTTP requests to the
  * application's home page.
  */
-
-case class UserData(firstName: String, lastName: String, email: String, matrNr: Int, university: Int)
 
 @Singleton
 class HomeController @Inject()(dbController: DatabaseController, cc: ControllerComponents) extends AbstractController(cc) {
@@ -125,6 +125,11 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         }
       }
     )
+  }
+
+  // GET: Logout current logged user
+  def logout: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    Redirect(routes.HomeController.home()).withNewSession/*.flashing("success" -> "Sie wurden erfolgreich abgemeldet!")*/
   }
 
   // GET: Admin panel

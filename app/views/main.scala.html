@@ -4,8 +4,7 @@
 * two arguments, a `String` for the title of the page and an `Html`
 * object to insert into the body of the page.
 *@
-
-@(title: String)(content: Html)
+@(title: String)(content: Html)(implicit session: Session)
 
 <!DOCTYPE html>
 <html lang="en">
@@ -59,7 +58,7 @@
                 </ul>
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
-                    @if(true) {
+                    @if(!session.get("connected")) {
                         <a href="@routes.HomeController.adminPanel">
                             <button class="btn btn-outline-danger my-2 my-sm-0" type="submit">
                                 <i class="fas fa-sign-in-alt"></i>
@@ -67,7 +66,7 @@
                             </button>
                         </a>
                     } else {
-                        <a href="@routes.HomeController.adminPanel">
+                        <a href="@routes.HomeController.logout">
                             <button class="btn btn-outline-danger my-2 my-sm-0" type="submit">
                                 <i class="fas fa-sign-out-alt"></i>
                                     &nbsp;&nbsp;Logout

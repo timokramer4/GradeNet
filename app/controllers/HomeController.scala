@@ -66,31 +66,37 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
           .map { file =>
             // Only get the last part of the filename without path
             val filename: Path = Paths.get(file.filename).getFileName
+            val fileArray: Array[String] = Paths.get(file.filename).getFileName().toString().split('.')
+            val fileType: String = fileArray(fileArray.length-1)
             var petitionId: Long = 0
 
-            // Create upload dir, if not exists
-            if (!Files.exists(Paths.get(uploadDir))) {
-              Files.createDirectory(Paths.get(uploadDir))
+            if (fileType == "pdf") {
+              // Create upload dir, if not exists
+              if (!Files.exists(Paths.get(uploadDir))) {
+                Files.createDirectory(Paths.get(uploadDir))
+              }
+
+              // Create new appreciation in database
+              petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university)
+
+              // Remove existing directory recursive
+              if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
+                val dir = new Directory(new File(s"$uploadDir/$petitionId"))
+                dir.deleteRecursively()
+              }
+
+              // Create new directory
+              println("Create dir with ID = " + petitionId)
+              tmpUploadDir = Files.createDirectory(Paths.get(s"$uploadDir/$petitionId"))
+
+              // Upload file in new directory
+              file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/$filename"), replace = false)
+
+              // Redirect and show success alert after successfully transfer all form data
+              Redirect(routes.HomeController.appreciationAll).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
+            } else {
+              Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Es sind nur PDF-Dateien als Anhang erlaubt!")
             }
-
-            // Create new appreciation in database
-            petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university)
-
-            // Remove existing directory recursive
-            if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
-              val dir = new Directory(new File(s"$uploadDir/$petitionId"))
-              dir.deleteRecursively()
-            }
-
-            // Create new directory
-            println("Create dir with ID = " + petitionId)
-            tmpUploadDir = Files.createDirectory(Paths.get(s"$uploadDir/$petitionId"))
-
-            // Upload file in new directory
-            file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/$filename"), replace = false)
-
-            // Redirect and show success alert after successfully transfer all form data
-            Redirect(routes.HomeController.appreciationAll).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
           }
           .getOrElse {
             // Redirect and show error
@@ -129,7 +135,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   // GET: Logout current logged user
   def logout: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    Redirect(routes.HomeController.home()).withNewSession/*.flashing("success" -> "Sie wurden erfolgreich abgemeldet!")*/
+    Redirect(routes.HomeController.home()).withNewSession /*.flashing("success" -> "Sie wurden erfolgreich abgemeldet!")*/
   }
 
   // GET: Admin panel

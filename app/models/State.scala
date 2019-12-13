@@ -60,11 +60,11 @@ object State {
     }
   }
 
-  def stateColor(state: State): String = {
+  def stateColor(state: State, contentType: String): String = {
     state match {
-      case Processing => "table-warning"
-      case Meeting => "table-danger"
-      case Closed => "table-success"
+      case Processing => s"${contentType}-warning"
+      case Meeting => s"${contentType}-danger"
+      case Closed => s"${contentType}-success"
       case _ => ""
     }
   }

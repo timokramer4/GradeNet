@@ -42,7 +42,7 @@
                         </thead>
                         <tbody>
                         @for(appreciation <- appreciationList) {
-                            <tr class='clickable @stateColor(appreciation.state)' data-href='@routes.HomeController.adminPanel/@getString(appreciation, "id")' style="cursor: pointer;">
+                            <tr class='clickable @stateColor(appreciation.state, "table")' data-href='@routes.HomeController.adminPanel/@getString(appreciation, "id")' style="cursor: pointer;">
                                 <th id="id" scope="row">@getString(appreciation, "id")</th>
                                 <td>@getString(appreciation, "firstName")</td>
                                 <td>@getString(appreciation, "lastName")</td>

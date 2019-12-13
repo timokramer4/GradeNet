@@ -1,4 +1,4 @@
-@(appreciationList: List[Student])(implicit session: Session, pageTitle: String = "AdminPanel - Dashboard", flash: Flash)
+@(appreciationList: List[Student])(implicit session: Session, request: Request[AnyContent], pageTitle: String = "AdminPanel - Dashboard", flash: Flash)
 @import models.State.stateColor
 @import models.Student._
 

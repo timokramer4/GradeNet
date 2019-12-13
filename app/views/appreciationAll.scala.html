@@ -1,5 +1,5 @@
 
-@(uniList: List[Map[String, String]])(implicit requestHeader: RequestHeader, session: Session, pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
+@(uniList: List[Map[String, String]])(implicit requestHeader: RequestHeader, request: Request[AnyContent], session: Session, pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
 
 @main("Antrag") {
     <!-- Page Content -->

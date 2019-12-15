@@ -24,7 +24,7 @@
                                 <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                             </div>
                         }
-                        <form class="form-signin" action="@routes.HomeController.loginUser" method="POST">
+                        <form class="form-signin" action="@routes.HomeController.login" method="POST">
                             @helper.CSRF.formField
                             <div class="form-group">
                                 <label for="username">Benutzername</label>

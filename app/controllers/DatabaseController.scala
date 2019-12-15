@@ -36,11 +36,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
           success =
             SQL(
               s"""CREATE TABLE IF NOT EXISTS ${userEntity} (
-              id INT(11) PRIMARY KEY AUTO_INCREMENT,
-              username VARCHAR(255) NOT NULL,
+              username VARCHAR(255) PRIMARY KEY,
               password VARCHAR(255) NOT NULL,
               admin BOOLEAN NOT NULL
               );""").execute()
+          success = SQL(
+            s"""INSERT INTO ${userEntity} (username, password, admin) VALUES ("admin", "52edc26fb9842cb6a77de4c2f27709d8a3d812545a5852ba9dbef35d10a7a5c5", 1) ON DUPLICATE KEY UPDATE username=username;""").execute()
         case "org.postgresql.Driver" => // PostgreSQL
           var success: Boolean =
             SQL(
@@ -60,6 +61,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               password VARCHAR NOT NULL,
               admin BOOLEAN NOT NULL
               )""").execute()
+          success = SQL(
+            s"""INSERT INTO "${userEntity}" (username, password, admin) VALUES ('admin', '52edc26fb9842cb6a77de4c2f27709d8a3d812545a5852ba9dbef35d10a7a5c5', TRUE) ON CONFLICT (username) DO NOTHING;""").execute()
       }
     }
   }

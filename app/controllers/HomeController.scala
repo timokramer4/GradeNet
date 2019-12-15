@@ -172,7 +172,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   }
 
   // POST: Login user
-  def loginUser = Action(parse.anyContent) { implicit request =>
+  def login = Action(parse.anyContent) { implicit request =>
     loginForm.bindFromRequest.fold(
       errorForm => {
         Redirect(routes.HomeController.loginPage()).flashing("error" -> "Fehlende Angaben!")
@@ -182,11 +182,17 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         val passInput: String = generateHash(successForm.password)
         println("Input Hash: " + passInput)
         println("DB Hash: " + user.password)
+        println(user.admin)
         if (user.password == passInput) {
-          println("Angemeldet!")
-          Redirect(routes.HomeController.adminPanel()).withSession("connected" -> user.username)
+          if(user.admin){
+            println("Logged in successfully!")
+            Redirect(routes.HomeController.adminPanel()).withSession("connected" -> user.username)
+          } else {
+            println("No permissions!")
+            Redirect(routes.HomeController.loginPage()).flashing("error" -> "Fehlende Berechtigungen!")
+          }
         } else {
-          println("Zugang verweigert!")
+          println("Access denied!")
           Redirect(routes.HomeController.loginPage()).flashing("error" -> "Benutzername oder Passwort falsch!")
         }
       }

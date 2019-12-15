@@ -10,7 +10,7 @@ GET     /appreciationAll                    controllers.HomeController.appreciat
 POST    /appreciationAll                    controllers.HomeController.appreciationAllPost
 
 GET     /login                              controllers.HomeController.loginPage
-POST    /login                              controllers.HomeController.loginUser
+POST    /login                              controllers.HomeController.login
 GET     /logout                              controllers.HomeController.logout
 
 GET     /admin                              controllers.HomeController.adminPanel

@@ -217,7 +217,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   // GET: Admin panel details
   def adminPanelDetails(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     val appreciationData: Student = dbController.getSingleAppreciation(id)
-    val uploadedFiles: List[File] = getListOfFiles(s"$uploadDir/$id")
+    val uploadedFiles: List[File] = getListOfFiles(id)
     val stateList: List[Int] = getStateList()
     Ok(views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList))
   }
@@ -243,8 +243,8 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   }
 
   // Return list of all files
-  def getListOfFiles(path: String): List[File] = {
-    val dir = new File(path)
+  def getListOfFiles(id: Int): List[File] = {
+    val dir = new File(s"${uploadDir}/${id}")
     if (dir.exists && dir.isDirectory) {
       dir.listFiles.filter(_.isFile).toList
     } else {
@@ -258,8 +258,16 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     Ok.sendFile(
       content = new java.io.File(s"${uploadDir}/${id}/${fileName}"),
       fileName = _ => s"Antrag#${id}_${fileName}",
-      inline = true
+      inline = false
     )
+  }
+
+  def downloadAllFiles(id: Int): Action[AnyContent] = Action {
+    getListOfFiles(id).foreach{ file =>
+      println(file.getName())
+      downloadFile(id, file.getName())
+    }
+    Redirect(routes.HomeController.adminPanelDetails(id))
   }
 
   def checkLogin(request: Request[AnyContent]): Boolean = {

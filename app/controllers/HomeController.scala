@@ -2,7 +2,6 @@ package controllers
 
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
-
 import controllers.Forms.AppreciationForm._
 import controllers.Forms.StateForm._
 import controllers.Forms.LoginForm._
@@ -24,6 +23,10 @@ import scala.reflect.io.Directory
 @Singleton
 class HomeController @Inject()(dbController: DatabaseController, cc: ControllerComponents) extends AbstractController(cc) {
 
+  // Define default upload parameters
+  var tmpUploadDir: Path = _
+  val uploadDir: String = "uploads"
+
   // GET: Landing page
   def home() = Action { implicit request: Request[AnyContent] =>
     Ok(views.html.home())
@@ -31,7 +34,68 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   // GET: Appreciation single grades
   def appreciationSingle() = Action { implicit request: Request[AnyContent] =>
-    Ok(views.html.appreciationSingle())
+    val r = requests.get("http://universities.hipolabs.com/search?country=germany")
+    val rawData: JsValue = Json.parse(r.text)
+    rawData match {
+      case a: JsArray => {
+        var unis: List[Map[String, String]] = Nil
+        for (i <- 0 to a.value.size - 1) {
+          unis = List(Map("id" -> i.toString(), "name" -> a(i).apply("name").as[String])).:::(unis)
+        }
+        Ok(views.html.appreciationSingle(unis))
+      }
+      case _ => Ok(views.html.home())
+    }
+  }
+
+  // POST: Form appreciation single grades
+  def appreciationSinglePost = Action(parse.multipartFormData) { implicit request =>
+    aFormSingle.bindFromRequest.fold(
+      errorForm => {
+        Redirect(routes.HomeController.appreciationSingle).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
+      },
+      successForm => {
+        request.body
+          .file("moduleFile")
+          .map { file =>
+            // Only get the last part of the filename without path
+            val filename: Path = Paths.get(file.filename).getFileName
+            val fileArray: Array[String] = Paths.get(file.filename).getFileName().toString().split('.')
+            val fileType: String = fileArray(fileArray.length - 1)
+            var petitionId: Long = 0
+
+            if (fileType == "pdf") {
+              // Create upload dir, if not exists
+              if (!Files.exists(Paths.get(uploadDir))) {
+                Files.createDirectory(Paths.get(uploadDir))
+              }
+
+              // Create new appreciation in database
+              petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university)
+
+              // Remove existing directory recursive
+              if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
+                val dir = new Directory(new File(s"$uploadDir/$petitionId"))
+                dir.deleteRecursively()
+              }
+
+              // Create new directory
+              tmpUploadDir = Files.createDirectory(Paths.get(s"$uploadDir/$petitionId"))
+
+              // Upload file in new directory
+              file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/$filename"), replace = false)
+
+              // Redirect and show success alert after successfully transfer all form data
+              Redirect(routes.HomeController.appreciationSingle).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
+            } else {
+              Redirect(routes.HomeController.appreciationSingle).flashing("error" -> "Es sind nur PDF-Dateien als Anhang erlaubt!")
+            }
+          }.getOrElse {
+          // Redirect and show error
+          Redirect(routes.HomeController.appreciationSingle).flashing("error" -> "Fehlender Anhang. Ein Antrag ohne Anhang ist nicht möglich!")
+        }
+      }
+    )
   }
 
   // GET: Appreciation all grades
@@ -51,11 +115,8 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   }
 
   // POST: Form appreciation all grades
-  var tmpUploadDir: Path = _
-  val uploadDir: String = "uploads"
-
   def appreciationAllPost = Action(parse.multipartFormData) { implicit request =>
-    aForm.bindFromRequest.fold(
+    aFormAll.bindFromRequest.fold(
       errorForm => {
         Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
         //        BadRequest(views.html.appreciationAll(errorForm))
@@ -67,7 +128,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
             // Only get the last part of the filename without path
             val filename: Path = Paths.get(file.filename).getFileName
             val fileArray: Array[String] = Paths.get(file.filename).getFileName().toString().split('.')
-            val fileType: String = fileArray(fileArray.length-1)
+            val fileType: String = fileArray(fileArray.length - 1)
             var petitionId: Long = 0
 
             if (fileType == "pdf") {
@@ -86,7 +147,6 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
               }
 
               // Create new directory
-              println("Create dir with ID = " + petitionId)
               tmpUploadDir = Files.createDirectory(Paths.get(s"$uploadDir/$petitionId"))
 
               // Upload file in new directory

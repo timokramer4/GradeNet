@@ -5,6 +5,7 @@
 # An example controller showing a sample home page
 GET     /                                   controllers.HomeController.home
 GET     /appreciationSingle                 controllers.HomeController.appreciationSingle
+POST    /appreciationSingle                 controllers.HomeController.appreciationSinglePost
 GET     /appreciationAll                    controllers.HomeController.appreciationAll
 POST    /appreciationAll                    controllers.HomeController.appreciationAllPost
 

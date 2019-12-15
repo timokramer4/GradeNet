@@ -62,14 +62,14 @@
                         <a href="@routes.HomeController.logout">
                             <button class="btn btn-outline-danger my-2 my-sm-0" type="submit">
                                 <i class="fas fa-sign-out-alt"></i>
-                                &nbsp;&nbsp;Logout
+                                    &nbsp;&nbsp;Logout
                             </button>
                         </a>
                     } else {
                         <a href="@routes.HomeController.adminPanel">
                             <button class="btn btn-outline-danger my-2 my-sm-0" type="submit">
                                 <i class="fas fa-sign-in-alt"></i>
-                                &nbsp;&nbsp;Admin-Panel
+                                    &nbsp;&nbsp;Admin-Panel
                             </button>
                         </a>
                     }
@@ -78,7 +78,12 @@
             </div>
         </nav>
 
-        @content
+            <!-- Page Content -->
+        <div class="container m-5">
+            <div class="container-fluid">
+            @content
+            </div>
+        </div>
 
         <script>
                 // Data tables

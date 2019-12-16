@@ -1,4 +1,6 @@
-@(uniList: Seq[String])(implicit requestHeader: RequestHeader, pageTitle: String = "Anerkennung einzelner Studienleistungen", flash: Flash)
+@import controllers.Forms.AppreciationForm
+@import views.html.helper.input
+@(aFormSingle: Form[AppreciationForm.Single], uniList: List[(String, String)])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, pageTitle: String = "Anerkennung einzelner Studienleistungen", flash: Flash)
 
 <div class="row">
     <div class="col-lg-12">
@@ -31,134 +33,155 @@
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
         }
-        <form action="@routes.HomeController.appreciationSinglePost" method="POST" enctype="multipart/form-data">
+        @helper.form(action = routes.HomeController.appreciationSinglePost(), Symbol("enctype") -> "multipart/form-data") {
             @helper.CSRF.formField
-        <div class="form-row">
-            <div class="form-group col-md-6">
-                <label for="firstName">Name</label>
-                <input type="text" class="form-control" id="firstName" name="firstName" placeholder="Name" required>
-            </div>
-            <div class="form-group col-md-6">
-                <label for="lastName">Nachname</label>
-                <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Nachname" required>
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="form-group col-md-2">
-                <label for="matrknr">Matrikelnr.</label>
-                <input type="number" min="100000" max="999999" class="form-control" id="matrNr" name="matrNr" placeholder="Matrikelnr." required>
-            </div>
-            <div class="form-group col-md-5">
-                <label for="email">Email</label>
-                <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
-            </div>
-            <div class="form-group col-md-5">
-                <label for="university">Bildungseinrichtung</label>
-                <select class="form-control" id="university" name="university" required>
-                    <option value="" selected disabled hidden>Bildungseinrichtung wählen</option>
-                    @for(uni <- uniList) {
-                        <option value='@uni'>@uni</option>
-                    }
-                </select>
-            </div>
-        </div>
-
-            <!-- TODO: Dynamic module appending -->
-        <div id="cardHolder">
-            <div class="card text-white bg-dark mb-3 align-middle">
-                <div class="card-header">
-                    <div class="row align-items-center">
-                        <div class="col">Neues Modul</div>
-                        <div class="col">
-                            <button id="removeModule" type="button" class="btn btn-danger float-right"><i class="fas fa-minus"></i></button>
+            <div class="form-row">
+                @helper.inputText(aFormSingle("firstName"),
+                    Symbol("_class") -> "form-group col-md-6",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Vorname",
+                    Symbol("placeholder") -> "Vorname",
+                    Symbol("required") -> "")
+                @helper.inputText(aFormSingle("lastName"),
+                    Symbol("_class") -> "form-group col-md-6",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Nachname",
+                    Symbol("placeholder") -> "Nachname",
+                    Symbol("required") -> "")
+                @helper.inputText(aFormSingle("matrNr"),
+                    Symbol("_class") -> "form-group col-md-2",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Matrikelnummer",
+                    Symbol("placeholder") -> "Matrikelnr.",
+                    Symbol("type") -> "number",
+                    Symbol("min") -> "100000",
+                    Symbol("max") -> "999999",
+                    Symbol("required") -> "")
+                @helper.inputText(aFormSingle("email"),
+                    Symbol("_class") -> "form-group col-md-5",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("type") -> "email",
+                    Symbol("_label") -> "Email",
+                    Symbol("placeholder") -> "Email",
+                    Symbol("required") -> "")
+                @helper.select(aFormSingle("university"), uniList,
+                    Symbol("_class") -> "form-group col-md-5",
+                    Symbol("class") -> "form-control",
+                    Symbol("_label") -> "Bildungseinrichtung",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("required") -> "")
+                <div class="form-group col-md-12">
+                    <label>Notenkonto</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Hochladen</span>
                         </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="moduleName">Modul</label>
-                        <select class="form-control" id="moduleName" name="moduleName" required>
-                            <option value="" selected disabled hidden>Modul wählen</option>
-                            @for(uni <- uniList) {
-                                <option value='@uni'>@uni</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="moduleDescription">Modulbeschreibung</label>
-                        <textarea class="form-control" id="moduleDescription" name="moduleDescription" rows="3" placeholder="Modulbeschreibung der anzurechnenden Leistung" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="moduleFile">Nachweis</label>
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">Hochladen</span>
-                            </div>
-                            <div class="custom-file">
-                                <input type="file" accept=".pdf" class="custom-file-input" id="moduleFile" name="moduleFile" required>
-                                <label class="custom-file-label" for="moduleFile">Datei auswählen</label>
-                            </div>
+                        <div class="custom-file">
+                            @helper.inputFile(aFormSingle("fileChooser"),
+                                Symbol("class") -> "custom-file-input",
+                                Symbol("_showConstraints") -> false,
+                                Symbol("_label") -> "",
+                                Symbol("accept") -> ".pdf",
+                                Symbol("required") -> "")
+                            <label class="custom-file-label">Datei auswählen</label>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <button type="button" id="addModule" class="btn btn-success btn-block">Modul hinzufügen</button>
+            <div id="cardHolder">
+                <div class="card text-white bg-dark mb-3 align-middle">
+                    <div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col">Neues Modul</div>
+                            <div class="col">
+                                <button id="removeModule" type="button" class="btn btn-danger float-right"><i class="fas fa-minus"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @helper.select(aFormSingle("modules.moduleName"), uniList,
+                            Symbol("_class") -> "form-group",
+                            Symbol("class") -> "form-control",
+                            Symbol("_showConstraints") -> false,
+                            Symbol("_label") -> "Modul",
+                            Symbol("required") -> "")
+                        <div class="form-group">
+                            <label>Modulbeschreibung</label>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">Hochladen</span>
+                                </div>
+                                <div class="custom-file">
+                                    @helper.inputFile(aFormSingle("modules.fileDescription"),
+                                        Symbol("class") -> "custom-file-input",
+                                        Symbol("_showConstraints") -> false,
+                                        Symbol("_label") -> "",
+                                        Symbol("accept") -> ".pdf",
+                                        Symbol("required") -> "")
+                                    <label class="custom-file-label">Datei auswählen</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="button" id="addModule" class="btn btn-success btn-block">Modul hinzufügen</button>
+            <br>
+            <button type="submit" class="btn btn-primary">Antrag absenden</button>
+        }
 
-        <br>
-        <br>
-        <button type="submit" class="btn btn-primary">Antrag absenden</button>
         <script>
-                        $('#addModule').on("click", function () {
-                            var cardHolder = $("#cardHolder");
-                            var card = document.createElement("div")
-                            card.classList = "card text-white bg-dark mb-3 align-middle"
-                            card.innerHTML = `<div class="card-header">
-                            <div class="row align-items-center">
-                                <div class="col">Neues Modul</div>
-                                <div class="col">
-                                    <button id="removeModule" type="button" class="btn btn-danger float-right"><i class="fas fa-minus"></i></button>
+                $('#addModule').on("click", function () {
+                    var cardHolder = $("#cardHolder");
+                    var card = document.createElement("div")
+                    card.classList = "card text-white bg-dark mb-3 align-middle"
+                    card.innerHTML = `<div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col">Neues Modul</div>
+                            <div class="col">
+                                <button id="removeModule" type="button" class="btn btn-danger float-right"><i class="fas fa-minus"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @helper.select(aFormSingle("modules.moduleName"), uniList,
+                            Symbol("_class") -> "form-group",
+                            Symbol("class") -> "form-control",
+                            Symbol("_showConstraints") -> false,
+                            Symbol("_label") -> "Modul",
+                            Symbol("required") -> "")
+                        <div class="form-group">
+                            <label>Modulbeschreibung</label>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">Hochladen</span>
+                                </div>
+                                <div class="custom-file">
+                                    @helper.inputFile(aFormSingle("modules.fileDescription"),
+                                        Symbol("class") -> "custom-file-input",
+                                        Symbol("_showConstraints") -> false,
+                                        Symbol("_label") -> "",
+                                        Symbol("accept") -> ".pdf",
+                                        Symbol("required") -> "")
+                                    <label class="custom-file-label">Datei auswählen</label>
                                 </div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label for="moduleName">Modul</label>
-                                <select class="form-control" id="moduleName" name="moduleName" required>
-                                    <option value="" selected disabled hidden>Modul wählen</option>
-                                    @for(uni <- uniList) {
-                                        <option value='@uni'>@uni</option>
-                                    }
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="moduleDescription">Modulbeschreibung</label>
-                                <textarea class="form-control" id="moduleDescription" name="moduleDescription" rows="3" placeholder="Modulbeschreibung der anzurechnenden Leistung" required></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="moduleFile">Nachweis</label>
-                                <div class="input-group mb-3">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">Hochladen</span>
-                                    </div>
-                                    <div class="custom-file">
-                                        <input type="file" accept=".pdf" class="custom-file-input" id="moduleFile" name="moduleFile" required>
-                                        <label class="custom-file-label" for="moduleFile">Datei auswählen</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
-                            cardHolder.append(card);
-                        });
+                    </div>`;
+                    cardHolder.append(card);
+                });
 
-                        $('body').on("click", 'button#removeModule', function (event) {
-                            event.stopPropagation();
-                            event.stopImmediatePropagation();
-                            if ($("button#removeModule").length > 1) {
-                                $(this).parent().parent().parent().parent().remove();
-                            }
-                        });
-                </script>
-        </form>
+                $('body').on("click", 'button#removeModule', function (event) {
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+                    if ($("button#removeModule").length > 1) {
+                        $(this).parent().parent().parent().parent().remove();
+                    }
+                });
+        </script>
     </div>
 </div>

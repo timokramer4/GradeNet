@@ -1,5 +1,5 @@
 @import controllers.Forms.AppreciationForm
-@(appreciationForm: Form[AppreciationForm.All], uniList: List[(String, String)])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
+@(aFormAll: Form[AppreciationForm.All], uniList: List[(String, String)])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
 
 <div class="row">
     <div class="col-lg-12">
@@ -35,14 +35,14 @@
         @helper.form(action = routes.HomeController.appreciationAllPost(), Symbol("enctype") -> "multipart/form-data") {
             @helper.CSRF.formField
             <div class="form-row">
-                @helper.inputText(appreciationForm("firstName"),
+                @helper.inputText(aFormAll("firstName"),
                     Symbol("_class") -> "form-group col-md-6",
                     Symbol("class") -> "form-control",
                     Symbol("_showConstraints") -> false,
                     Symbol("_label") -> "Vorname",
                     Symbol("placeholder") -> "Vorname",
                     Symbol("required") -> "")
-                @helper.inputText(appreciationForm("lastName"),
+                @helper.inputText(aFormAll("lastName"),
                     Symbol("_class") -> "form-group col-md-6",
                     Symbol("class") -> "form-control",
                     Symbol("_showConstraints") -> false,
@@ -51,7 +51,7 @@
                     Symbol("required") -> "")
             </div>
             <div class="form-row">
-                @helper.inputText(appreciationForm("matrNr"),
+                @helper.inputText(aFormAll("matrNr"),
                     Symbol("_class") -> "form-group col-md-2",
                     Symbol("class") -> "form-control",
                     Symbol("_showConstraints") -> false,
@@ -61,7 +61,7 @@
                     Symbol("min") -> "100000",
                     Symbol("max") -> "999999",
                     Symbol("required") -> "")
-                @helper.inputText(appreciationForm("email"),
+                @helper.inputText(aFormAll("email"),
                     Symbol("_class") -> "form-group col-md-5",
                     Symbol("class") -> "form-control",
                     Symbol("_showConstraints") -> false,
@@ -69,33 +69,31 @@
                     Symbol("_label") -> "Email",
                     Symbol("placeholder") -> "Email",
                     Symbol("required") -> "")
-                @helper.select(appreciationForm("university"), uniList,
+                @helper.select(aFormAll("university"), uniList,
                     Symbol("_class") -> "form-group col-md-5",
                     Symbol("class") -> "form-control",
                     Symbol("_showConstraints") -> false,
                     Symbol("_label") -> "Email",
                     Symbol("required") -> "")
                 <div class="form-group col-md-12">
+                    <label>Notenkonto</label>
                     <div class="input-group mb-3">
                         <div class="input-group-prepend">
                             <span class="input-group-text">Hochladen</span>
                         </div>
                         <div class="custom-file">
-                            @helper.inputFile(appreciationForm("fileChooser"),
+                            @helper.inputFile(aFormAll("fileChooser"),
                                 Symbol("class") -> "custom-file-input",
                                 Symbol("_showConstraints") -> false,
                                 Symbol("_label") -> "",
                                 Symbol("accept") -> ".pdf",
                                 Symbol("required") -> "")
-                            <label class="custom-file-label" for="fileChooser">Datei auswählen</label>
+                            <label class="custom-file-label">Datei auswählen</label>
                         </div>
                     </div>
                 </div>
-                <div class="form-group col-md-12">
-                    <button type="submit" class="btn btn-primary">Antrag absenden</button>
-                </div>
             </div>
+            <button type="submit" class="btn btn-primary">Antrag absenden</button>
         }
     </div>
 </div>
-

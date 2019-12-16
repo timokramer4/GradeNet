@@ -11,7 +11,7 @@ object AppreciationForm {
                    email: String,
                    matrNr: Int,
                    university: String,
-                   fileChooser: Option[String]
+                   gradeFile: Option[String]
                  )
 
   case class Single(
@@ -20,12 +20,12 @@ object AppreciationForm {
                    email: String,
                    matrNr: Int,
                    university: String,
+                   gradeFile: Option[String],
                    modules: Seq[Module]
                  )
 
   case class Module(
                      name: Int,
-                     description: String,
                      file: Option[String]
                    )
 
@@ -36,11 +36,11 @@ object AppreciationForm {
       "email" -> email,
       "matrNr" -> number(min = 100000, max = 999999),
       "university" -> nonEmptyText,
+      "gradeFile" -> optional(text),
       "modules" -> seq(
         mapping(
           "moduleName" -> number,
-          "moduleDescription" -> nonEmptyText,
-          "moduleFile" -> optional(text)
+          "moduleDescription" -> optional(text)
         )(Module.apply)(Module.unapply)
       )
     )(Single.apply)(Single.unapply)
@@ -53,7 +53,7 @@ object AppreciationForm {
       "email" -> email,
       "matrNr" -> number(min = 100000, max = 999999),
       "university" -> nonEmptyText,
-      "fileChooser" -> optional(text)
+      "gradeFile" -> optional(text)
     )(All.apply)(All.unapply)
   )
 }

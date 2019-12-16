@@ -37,20 +37,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def appreciationSingle() = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     val rawData: JsValue = Json.parse(r.text) // [{}, {}]
-    rawData match {
-      case JsArray(array) => Ok(views.html.main("Antrag", views.html.appreciationSingle(array.map(v => extract(v)).toSeq)))
-      case _ => throw new IllegalArgumentException("JSON hat unerwartete Struktur!")
-    }
-  }
-
-  def extract(v: JsValue): String = {
-    v match {
-      case JsObject(map) => map.get("name") match {
-        case Some(JsString(str)) => str
-        case _ => throw new IllegalArgumentException("JSON hat unerwartete Struktur!")
-      }
-      case _ => throw new IllegalArgumentException("JSON hat unerwartete Struktur!")
-    }
+    Ok(views.html.main("Antrag", views.html.appreciationSingle(aFormSingle, jsonConverter(rawData))))
   }
 
   // POST: Form appreciation single grades
@@ -62,7 +49,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       successForm => {
         println(successForm.modules)
         successForm.modules.foreach { module =>
-          println(module.description)
+          println(module.name)
         }
 
         request.body
@@ -112,16 +99,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def appreciationAll() = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     val rawData: JsValue = Json.parse(r.text)
-    rawData match {
-      case a: JsArray => {
-        var unis: List[(String, String)] = List(("", "Bildungeinrichtung wählen"))
-        for (i <- 0 to a.value.size - 1) {
-          unis = List((i.toString(), a(i).apply("name").as[String])).:::(unis)
-        }
-        Ok(views.html.main("Antrag", views.html.appreciationAll(aFormAll, unis)))
-      }
-      case _ => throw new IllegalArgumentException("JSON hat unerwartete Struktur!")
-    }
+    Ok(views.html.main("Antrag", views.html.appreciationAll(aFormAll, jsonConverter(rawData))))
   }
 
   // POST: Form appreciation all grades
@@ -133,7 +111,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       },
       successForm => {
         request.body
-          .file("fileChooser")
+          .file("gradeFile")
           .map { file =>
             // Only get the last part of the filename without path
             val filename: Path = Paths.get(file.filename).getFileName
@@ -249,6 +227,25 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       )
     } else {
       Redirect(routes.HomeController.loginPage())
+    }
+  }
+
+  // Convert JSON Array in (value, content) pair for select field
+  def jsonConverter(jsValue: JsValue): List[(String, String)] = {
+    jsValue match {
+      case JsArray(jsArray) => jsArray.map(v => (extract(v, "name"), extract(v, "name"))).toList
+      case _ => throw new IllegalArgumentException("JSON hat unerwartete Struktur!")
+    }
+  }
+
+  // Extract JSON property
+  def extract(v: JsValue, property: String): String = {
+    v match {
+      case JsObject(map) => map.get(property) match {
+        case Some(JsString(str)) => str
+        case _ => throw new IllegalArgumentException("JSON hat unerwartete Struktur!")
+      }
+      case _ => throw new IllegalArgumentException("JSON hat unerwartete Struktur!")
     }
   }
 

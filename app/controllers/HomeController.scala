@@ -55,6 +55,11 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         Redirect(routes.HomeController.appreciationSingle).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
       },
       successForm => {
+        println(successForm.modules)
+        successForm.modules.foreach { module =>
+          println(module.description)
+        }
+
         request.body
           .file("moduleFile")
           .map { file =>

@@ -2,13 +2,14 @@ package controllers
 
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
+
 import controllers.Forms.AppreciationForm._
 import controllers.Forms.StateForm._
 import controllers.Forms.LoginForm._
 import javax.inject._
 import models.State._
 import models.{Student, User}
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{AnyContent, _}
 import controllers.Hasher.generateHash
 
@@ -29,22 +30,26 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   // GET: Landing page
   def home() = Action { implicit request: Request[AnyContent] =>
-    Ok(views.html.home())
+    Ok(views.html.main("Startseite", views.html.home()))
   }
 
   // GET: Appreciation single grades
   def appreciationSingle() = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
-    val rawData: JsValue = Json.parse(r.text)
+    val rawData: JsValue = Json.parse(r.text) // [{}, {}]
     rawData match {
-      case a: JsArray => {
-        var unis: List[Map[String, String]] = Nil
-        for (i <- 0 to a.value.size - 1) {
-          unis = List(Map("id" -> i.toString(), "name" -> a(i).apply("name").as[String])).:::(unis)
-        }
-        Ok(views.html.appreciationSingle(unis))
+      case JsArray(array) => Ok(views.html.main("Antrag", views.html.appreciationSingle(array.map(v => extract(v)).toSeq)))
+      case _ => throw new IllegalArgumentException("JSON hat unerwartete Struktur!")
+    }
+  }
+
+  def extract(v: JsValue): String = {
+    v match {
+      case JsObject(map) => map.get("name") match {
+        case Some(JsString(str)) => str
+        case _ => throw new IllegalArgumentException("JSON hat unerwartete Struktur!")
       }
-      case _ => Ok(views.html.home())
+      case _ => throw new IllegalArgumentException("JSON hat unerwartete Struktur!")
     }
   }
 
@@ -113,9 +118,9 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         for (i <- 0 to a.value.size - 1) {
           unis = List(Map("id" -> i.toString(), "name" -> a(i).apply("name").as[String])).:::(unis)
         }
-        Ok(views.html.appreciationAll(unis))
+        Ok(views.html.main("Antrag", views.html.appreciationAll(unis)))
       }
-      case _ => Ok(views.html.home())
+      case _ => throw new IllegalArgumentException("JSON hat unerwartete Struktur!")
     }
   }
 
@@ -173,7 +178,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   // GET: Login page
   def loginPage: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    Ok(views.html.login())
+    Ok(views.html.main("Anmeldung", views.html.login()))
   }
 
   // POST: Login user
@@ -213,7 +218,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def adminPanel: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (checkLogin(request)) {
       val data: List[Student] = dbController.getAllAppreciations()
-      Ok(views.html.adminPanel(data))
+      Ok(views.html.main("Admin Panel", views.html.adminPanel(data)))
     } else {
       Redirect(routes.HomeController.loginPage())
     }
@@ -224,7 +229,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     val appreciationData: Student = dbController.getSingleAppreciation(id)
     val uploadedFiles: List[File] = getListOfFiles(id)
     val stateList: List[Int] = getStateList()
-    Ok(views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList))
+    Ok(views.html.main("Admin Panel", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList)))
   }
 
   // POST: Change appreciation state

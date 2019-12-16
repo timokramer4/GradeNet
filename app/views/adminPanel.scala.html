@@ -1,8 +1,7 @@
-@(appreciationList: List[Student])(implicit session: Session, request: Request[AnyContent], pageTitle: String = "AdminPanel - Dashboard", flash: Flash)
-@import models.State.stateColor
-@import models.Student._
+@(appreciationList: List[Student])(implicit pageTitle: String = "AdminPanel - Dashboard", flash: Flash)
+    @import models.State.stateColor
+    @import models.Student._
 
-@main("AdminPanel") {
     <div class="row">
         <div class="col-lg-12">
                 <!-- Page content -->
@@ -58,5 +57,3 @@
             </script>
         </div>
     </div>
-
-}

@@ -30,7 +30,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               lastName VARCHAR(255) NOT NULL,
               email VARCHAR(255) NOT NULL,
               matrNr INT(11) NOT NULL,
-              university INT(11) NOT NULL,
+              university VARCHAR(255) NOT NULL,
               state INT(11) NOT NULL
               );""").execute()
           success =
@@ -51,7 +51,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               lastName VARCHAR NOT NULL,
               email VARCHAR NOT NULL,
               matrNr INT NOT NULL,
-              university INT NOT NULL,
+              university VARCHAR NOT NULL,
               state INT NOT NULL
               );""").execute()
           success =
@@ -154,7 +154,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
     db.withConnection { implicit c =>
       val parser: RowParser[Student] =
-        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ int("university") ~ int("state") map {
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("state") map {
           case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => Student(id, fn, ln, mnr, email, uni, switchStateInt(state).asInstanceOf[State])
         }
 
@@ -177,7 +177,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val parser: RowParser[Student] = {
-        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ int("university") ~ int("state") map {
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("state") map {
           case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => Student(id, fn, ln, mnr, email, uni, switchStateInt(state).asInstanceOf[State])
         }
       }

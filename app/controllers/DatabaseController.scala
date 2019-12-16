@@ -78,7 +78,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                          )
 
   // Create new appreciation in database
-  def createAppreciation(firstName: String, lastName: String, email: String, matrNr: Int, university: Int): Long = {
+  def createAppreciation(firstName: String, lastName: String, email: String, matrNr: Int, university: String): Long = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       var id: Option[Long] = Some(0)

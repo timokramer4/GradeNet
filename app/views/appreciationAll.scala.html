@@ -1,4 +1,5 @@
-@(uniList: List[Map[String, String]])(implicit requestHeader: RequestHeader, pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
+@import controllers.Forms.AppreciationForm
+@(appreciationForm: Form[AppreciationForm.All], uniList: List[(String, String)])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
 
 <div class="row">
     <div class="col-lg-12">
@@ -31,47 +32,70 @@
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
         }
-        <form action="@routes.HomeController.appreciationAllPost" method="POST" enctype="multipart/form-data">
+        @helper.form(action = routes.HomeController.appreciationAllPost(), Symbol("enctype") -> "multipart/form-data") {
             @helper.CSRF.formField
-        <div class="form-row">
-            <div class="form-group col-md-6">
-                <label for="firstName">Name</label>
-                <input type="text" class="form-control" id="firstName" name="firstName" placeholder="Name" required>
+            <div class="form-row">
+                @helper.inputText(appreciationForm("firstName"),
+                    Symbol("_class") -> "form-group col-md-6",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Vorname",
+                    Symbol("placeholder") -> "Vorname",
+                    Symbol("required") -> "")
+                @helper.inputText(appreciationForm("lastName"),
+                    Symbol("_class") -> "form-group col-md-6",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Nachname",
+                    Symbol("placeholder") -> "Nachname",
+                    Symbol("required") -> "")
             </div>
-            <div class="form-group col-md-6">
-                <label for="lastName">Nachname</label>
-                <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Nachname" required>
+            <div class="form-row">
+                @helper.inputText(appreciationForm("matrNr"),
+                    Symbol("_class") -> "form-group col-md-2",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Matrikelnummer",
+                    Symbol("placeholder") -> "Matrikelnr.",
+                    Symbol("type") -> "number",
+                    Symbol("min") -> "100000",
+                    Symbol("max") -> "999999",
+                    Symbol("required") -> "")
+                @helper.inputText(appreciationForm("email"),
+                    Symbol("_class") -> "form-group col-md-5",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("type") -> "email",
+                    Symbol("_label") -> "Email",
+                    Symbol("placeholder") -> "Email",
+                    Symbol("required") -> "")
+                @helper.select(appreciationForm("university"), uniList,
+                    Symbol("_class") -> "form-group col-md-5",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Email",
+                    Symbol("required") -> "")
+                <div class="form-group col-md-12">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Hochladen</span>
+                        </div>
+                        <div class="custom-file">
+                            @helper.inputFile(appreciationForm("fileChooser"),
+                                Symbol("class") -> "custom-file-input",
+                                Symbol("_showConstraints") -> false,
+                                Symbol("_label") -> "",
+                                Symbol("accept") -> ".pdf",
+                                Symbol("required") -> "")
+                            <label class="custom-file-label" for="fileChooser">Datei auswählen</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group col-md-12">
+                    <button type="submit" class="btn btn-primary">Antrag absenden</button>
+                </div>
             </div>
-        </div>
-        <div class="form-row">
-            <div class="form-group col-md-2">
-                <label for="matrknr">Matrikelnr.</label>
-                <input type="number" min="100000" max="999999" class="form-control" id="matrNr" name="matrNr" placeholder="Matrikelnr." required>
-            </div>
-            <div class="form-group col-md-5">
-                <label for="email">Email</label>
-                <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
-            </div>
-            <div class="form-group col-md-5">
-                <label for="university">Bildungseinrichtung</label>
-                <select class="form-control" id="university" name="university" required>
-                    <option value="" selected disabled hidden>Bildungseinrichtung wählen</option>
-                    @for(uni <- uniList) {
-                        <option value='@uni.get("id")'>@uni.get("name")</option>
-                    }
-                </select>
-            </div>
-        </div>
-        <div class="input-group mb-3">
-            <div class="input-group-prepend">
-                <span class="input-group-text">Hochladen</span>
-            </div>
-            <div class="custom-file">
-                <input type="file" accept=".pdf" class="custom-file-input" id="fileChooser" name="fileChooser" required>
-                <label class="custom-file-label" for="fileChooser">Datei auswählen</label>
-            </div>
-        </div>
-        <button type="submit" class="btn btn-primary">Antrag absenden</button>
-        </form>
+        }
     </div>
 </div>
+

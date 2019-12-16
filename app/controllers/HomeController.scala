@@ -22,7 +22,7 @@ import scala.reflect.io.Directory
  */
 
 @Singleton
-class HomeController @Inject()(dbController: DatabaseController, cc: ControllerComponents) extends AbstractController(cc) {
+class HomeController @Inject()(dbController: DatabaseController, cc: ControllerComponents) extends AbstractController(cc) with play.api.i18n.I18nSupport {
 
   // Define default upload parameters
   var tmpUploadDir: Path = _
@@ -114,11 +114,11 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     val rawData: JsValue = Json.parse(r.text)
     rawData match {
       case a: JsArray => {
-        var unis: List[Map[String, String]] = Nil
+        var unis: List[(String, String)] = List(("", "Bildungeinrichtung wählen"))
         for (i <- 0 to a.value.size - 1) {
-          unis = List(Map("id" -> i.toString(), "name" -> a(i).apply("name").as[String])).:::(unis)
+          unis = List((i.toString(), a(i).apply("name").as[String])).:::(unis)
         }
-        Ok(views.html.main("Antrag", views.html.appreciationAll(unis)))
+        Ok(views.html.main("Antrag", views.html.appreciationAll(aFormAll, unis)))
       }
       case _ => throw new IllegalArgumentException("JSON hat unerwartete Struktur!")
     }

@@ -10,7 +10,7 @@ object AppreciationForm {
                    lastName: String,
                    email: String,
                    matrNr: Int,
-                   university: Int,
+                   university: String,
                    fileChooser: Option[String]
                  )
 
@@ -19,7 +19,7 @@ object AppreciationForm {
                    lastName: String,
                    email: String,
                    matrNr: Int,
-                   university: Int,
+                   university: String,
                    modules: Seq[Module]
                  )
 
@@ -35,7 +35,7 @@ object AppreciationForm {
       "lastName" -> nonEmptyText,
       "email" -> email,
       "matrNr" -> number(min = 100000, max = 999999),
-      "university" -> number,
+      "university" -> nonEmptyText,
       "modules" -> seq(
         mapping(
           "moduleName" -> number,
@@ -52,7 +52,7 @@ object AppreciationForm {
       "lastName" -> nonEmptyText,
       "email" -> email,
       "matrNr" -> number(min = 100000, max = 999999),
-      "university" -> number,
+      "university" -> nonEmptyText,
       "fileChooser" -> optional(text)
     )(All.apply)(All.unapply)
   )

@@ -1,6 +1,6 @@
 @import controllers.Forms.AppreciationForm
 @import views.html.helper.input
-@(aFormSingle: Form[AppreciationForm.Single], uniList: List[(String, String)])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, pageTitle: String = "Anerkennung einzelner Studienleistungen", flash: Flash)
+@(aFormSingle: Form[AppreciationForm.Single], uniList: List[(String, String)], moduleList: List[(String, String)])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, pageTitle: String = "Anerkennung einzelner Studienleistungen", flash: Flash)
 
 <div class="row">
     <div class="col-lg-12">
@@ -103,7 +103,7 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        @helper.select(aFormSingle("modules.moduleName"), uniList,
+                        @helper.select(aFormSingle("modules.moduleName"), moduleList,
                             Symbol("_class") -> "form-group",
                             Symbol("class") -> "form-control",
                             Symbol("_showConstraints") -> false,
@@ -148,7 +148,7 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        @helper.select(aFormSingle("modules.moduleName"), uniList,
+                        @helper.select(aFormSingle("modules.moduleName"), moduleList,
                             Symbol("_class") -> "form-group",
                             Symbol("class") -> "form-control",
                             Symbol("_showConstraints") -> false,

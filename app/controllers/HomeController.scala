@@ -36,8 +36,9 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   // GET: Appreciation single grades
   def appreciationSingle() = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
-    val rawData: JsValue = Json.parse(r.text) // [{}, {}]
-    Ok(views.html.main("Antrag", views.html.appreciationSingle(aFormSingle, jsonConverter(rawData))))
+    val uniList: List[(String, String)] = jsonConverter(Json.parse(r.text)) // [{}, {}]
+    val moduleList: List[(String, String)] = dbController.getModules().map(module => (module.id.toString, module.name))
+    Ok(views.html.main("Antrag", views.html.appreciationSingle(aFormSingle, uniList, moduleList)))
   }
 
   // POST: Form appreciation single grades

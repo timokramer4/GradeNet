@@ -5,7 +5,7 @@ import anorm.{RowParser, SQL, _}
 import com.typesafe.config.ConfigFactory
 import javax.inject.Inject
 import models.State._
-import models.{State, Student, User}
+import models.{Module, State, Student, User}
 import play.api.db.DBApi
 import play.api.mvc.ControllerComponents
 
@@ -16,6 +16,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   private val appreciationEntity = "appreciation"
   private val userEntity = "user"
+  private val modulesEntity = "modules"
 
   // Check database integrity
   def checkDBIntegrity(): Unit = {
@@ -33,6 +34,16 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               university VARCHAR(255) NOT NULL,
               state INT(11) NOT NULL
               );""").execute()
+          success = SQL(
+            s"""CREATE TABLE IF NOT EXISTS ${modulesEntity} (
+               id INT(11) PRIMARY KEY AUTO_INCREMENT,
+               name VARCHAR NOT NULL
+               );""").execute()
+          success = SQL(
+            s"""CREATE TABLE IF NOT EXISTS "${appreciationEntity}_${modulesEntity}" (
+               appreciation_id SERIAL REFERENCES ${appreciationEntity}(id),
+               module_id SERIAL REFERENCES ${appreciationEntity}(id)
+               );""").execute()
           success =
             SQL(
               s"""CREATE TABLE IF NOT EXISTS ${userEntity} (
@@ -54,6 +65,16 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               university VARCHAR NOT NULL,
               state INT NOT NULL
               );""").execute()
+          success = SQL(
+            s"""CREATE TABLE IF NOT EXISTS "${modulesEntity}" (
+               id SERIAL PRIMARY KEY,
+               name VARCHAR NOT NULL
+               );""").execute()
+          success = SQL(
+            s"""CREATE TABLE IF NOT EXISTS "${appreciationEntity}_${modulesEntity}" (
+               appreciation_id SERIAL REFERENCES ${appreciationEntity}(id),
+               module_id SERIAL REFERENCES ${appreciationEntity}(id)
+               );""").execute()
           success =
             SQL(
               s"""CREATE TABLE IF NOT EXISTS "${userEntity}" (
@@ -188,6 +209,36 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
             SQL(s"""SELECT * from ${appreciationEntity} WHERE id = ${id}""").as(parser.single)
           case "org.postgresql.Driver" => // PostgreSQL
             SQL(s"""SELECT * from "${appreciationEntity}" WHERE id = ${id}""").as(parser.single)
+        }
+      }
+
+      return result
+    }
+  }
+
+  def getModules(): List[Module] ={
+    checkDBIntegrity()
+    db.withConnection { implicit c =>
+      val parser: RowParser[Module] = {
+        int("id") ~ str("name") map {
+          case id ~ name => Module(id, name)
+        }
+      }
+
+      val result : List[Module] = {
+        try {
+          ConfigFactory.load().getString("db.default.driver") match {
+            case "com.mysql.jdbc.Driver" => // MySQL
+              SQL(s"""SELECT * FROM ${modulesEntity}""").as(parser.*)
+            case "org.postgresql.Driver" => // PostgreSQL
+              SQL(s"""SELECT * FROM "${modulesEntity}"""").as(parser.*)
+          }
+        }
+        catch {
+          case e: Exception => {
+            println(s"""Es konnten keine Module gefunden werden!""")
+            List(Module(0, ""))
+          }
         }
       }
 

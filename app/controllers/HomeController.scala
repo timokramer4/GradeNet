@@ -54,7 +54,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         }
 
         request.body
-          .file("moduleFile")
+          .file("gradeFile")
           .map { file =>
             // Only get the last part of the filename without path
             val filename: Path = Paths.get(file.filename).getFileName
@@ -99,8 +99,8 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   // GET: Appreciation all grades
   def appreciationAll() = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
-    val rawData: JsValue = Json.parse(r.text)
-    Ok(views.html.main("Antrag", views.html.appreciationAll(aFormAll, jsonConverter(rawData))))
+    val uniList: List[(String, String)] = jsonConverter(Json.parse(r.text))
+    Ok(views.html.main("Antrag", views.html.appreciationAll(aFormAll, uniList)))
   }
 
   // POST: Form appreciation all grades
@@ -144,12 +144,12 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
               // Redirect and show success alert after successfully transfer all form data
               Redirect(routes.HomeController.appreciationAll).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
             } else {
-              Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Es sind nur PDF-Dateien als Anhang erlaubt!")
+              Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Es sind nur PDF-Dateien als Anhang erlaubt! Bitte laden Sie Ihr Notenkonto als PDF Datei hoch!")
             }
           }
           .getOrElse {
             // Redirect and show error
-            Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Fehlender Anhang. Ein Antrag ohne Anhang ist nicht möglich!")
+            Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Ein Antrag ohne Notenkonto ist nicht möglich! Bitte laden Sie Ihr Notenkonto hoch.")
           }
       }
     )
@@ -173,7 +173,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         println("DB Hash: " + user.password)
         println(user.admin)
         if (user.password == passInput) {
-          if(user.admin){
+          if (user.admin) {
             println("Logged in successfully!")
             Redirect(routes.HomeController.adminPanel()).withSession("connected" -> user.username)
           } else {
@@ -205,10 +205,14 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   // GET: Admin panel details
   def adminPanelDetails(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    val appreciationData: Student = dbController.getSingleAppreciation(id)
-    val uploadedFiles: List[File] = getListOfFiles(id)
-    val stateList: List[Int] = getStateList()
-    Ok(views.html.main("Admin Panel", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList)))
+    if (checkLogin(request)) {
+      val appreciationData: Student = dbController.getSingleAppreciation(id)
+      val uploadedFiles: List[File] = getListOfFiles(id)
+      val stateList: List[Int] = getStateList()
+      Ok(views.html.main("Admin Panel", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList)))
+    } else {
+      Redirect(routes.HomeController.loginPage())
+    }
   }
 
   // POST: Change appreciation state
@@ -261,21 +265,29 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   }
 
   // GET: Download a specific file
-  def downloadFile(id: Int, fileName: String): Action[AnyContent] = Action {
-    implicit val ec = ExecutionContext.global
-    Ok.sendFile(
-      content = new java.io.File(s"${uploadDir}/${id}/${fileName}"),
-      fileName = _ => s"Antrag#${id}_${fileName}",
-      inline = false
-    )
+  def downloadFile(id: Int, fileName: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    if (checkLogin(request)) {
+      implicit val ec = ExecutionContext.global
+      Ok.sendFile(
+        content = new java.io.File(s"${uploadDir}/${id}/${fileName}"),
+        fileName = _ => s"Antrag#${id}_${fileName}",
+        inline = false
+      )
+    } else {
+      Redirect(routes.HomeController.loginPage())
+    }
   }
 
-  def downloadAllFiles(id: Int): Action[AnyContent] = Action {
-    getListOfFiles(id).foreach{ file =>
-      println(file.getName())
-      downloadFile(id, file.getName())
+  def downloadAllFiles(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    if (checkLogin(request)) {
+      getListOfFiles(id).foreach { file =>
+        println(file.getName())
+        downloadFile(id, file.getName())
+      }
+      Redirect(routes.HomeController.adminPanelDetails(id))
+    } else {
+      Redirect(routes.HomeController.loginPage())
     }
-    Redirect(routes.HomeController.adminPanelDetails(id))
   }
 
   def checkLogin(request: Request[AnyContent]): Boolean = {

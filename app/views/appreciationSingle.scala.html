@@ -81,7 +81,7 @@
                             <span class="input-group-text">Hochladen</span>
                         </div>
                         <div class="custom-file">
-                            @helper.inputFile(aFormSingle("fileChooser"),
+                            @helper.inputFile(aFormSingle("gradeFile"),
                                 Symbol("class") -> "custom-file-input",
                                 Symbol("_showConstraints") -> false,
                                 Symbol("_label") -> "",
@@ -103,7 +103,7 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        @helper.select(aFormSingle("modules.moduleName"), moduleList,
+                        @helper.select(aFormSingle("modules[0].moduleName"), moduleList,
                             Symbol("_class") -> "form-group",
                             Symbol("class") -> "form-control",
                             Symbol("_showConstraints") -> false,
@@ -116,7 +116,7 @@
                                     <span class="input-group-text">Hochladen</span>
                                 </div>
                                 <div class="custom-file">
-                                    @helper.inputFile(aFormSingle("modules.fileDescription"),
+                                    @helper.inputFile(aFormSingle("modules[0].fileDescription"),
                                         Symbol("class") -> "custom-file-input",
                                         Symbol("_showConstraints") -> false,
                                         Symbol("_label") -> "",
@@ -148,7 +148,7 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        @helper.select(aFormSingle("modules.moduleName"), moduleList,
+                        @helper.select(aFormSingle("modules[1].moduleName"), moduleList,
                             Symbol("_class") -> "form-group",
                             Symbol("class") -> "form-control",
                             Symbol("_showConstraints") -> false,
@@ -161,7 +161,7 @@
                                     <span class="input-group-text">Hochladen</span>
                                 </div>
                                 <div class="custom-file">
-                                    @helper.inputFile(aFormSingle("modules.fileDescription"),
+                                    @helper.inputFile(aFormSingle("modules[1].moduleDescription"),
                                         Symbol("class") -> "custom-file-input",
                                         Symbol("_showConstraints") -> false,
                                         Symbol("_label") -> "",

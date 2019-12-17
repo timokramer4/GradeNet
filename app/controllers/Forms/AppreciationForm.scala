@@ -10,8 +10,7 @@ object AppreciationForm {
                    lastName: String,
                    email: String,
                    matrNr: Int,
-                   university: String,
-                   gradeFile: Option[String]
+                   university: String
                  )
 
   case class Single(
@@ -20,13 +19,11 @@ object AppreciationForm {
                    email: String,
                    matrNr: Int,
                    university: String,
-                   gradeFile: Option[String],
-                   modules: Seq[Module]
+                   modules: List[Module]
                  )
 
   case class Module(
-                     name: Int,
-                     file: Option[String]
+                     name: Int
                    )
 
   val aFormSingle = Form(
@@ -36,11 +33,9 @@ object AppreciationForm {
       "email" -> email,
       "matrNr" -> number(min = 100000, max = 999999),
       "university" -> nonEmptyText,
-      "gradeFile" -> optional(text),
-      "modules" -> seq(
+      "modules" -> list(
         mapping(
-          "moduleName" -> number,
-          "moduleDescription" -> optional(text)
+          "moduleName" -> number
         )(Module.apply)(Module.unapply)
       )
     )(Single.apply)(Single.unapply)
@@ -52,8 +47,7 @@ object AppreciationForm {
       "lastName" -> nonEmptyText,
       "email" -> email,
       "matrNr" -> number(min = 100000, max = 999999),
-      "university" -> nonEmptyText,
-      "gradeFile" -> optional(text)
+      "university" -> nonEmptyText
     )(All.apply)(All.unapply)
   )
 }

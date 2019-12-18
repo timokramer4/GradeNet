@@ -6,24 +6,20 @@ object AppreciationForm {
   import play.api.data.Forms._
 
   case class All(
-                   firstName: String,
-                   lastName: String,
-                   email: String,
-                   matrNr: Int,
-                   university: String
-                 )
+                  firstName: String,
+                  lastName: String,
+                  email: String,
+                  matrNr: Int,
+                  university: String
+                )
 
   case class Single(
-                   firstName: String,
-                   lastName: String,
-                   email: String,
-                   matrNr: Int,
-                   university: String,
-                   modules: List[Module]
-                 )
-
-  case class Module(
-                     name: Int
+                     firstName: String,
+                     lastName: String,
+                     email: String,
+                     matrNr: Int,
+                     university: String,
+                     modules: List[Int]
                    )
 
   val aFormSingle = Form(
@@ -33,11 +29,7 @@ object AppreciationForm {
       "email" -> email,
       "matrNr" -> number(min = 100000, max = 999999),
       "university" -> nonEmptyText,
-      "modules" -> list(
-        mapping(
-          "moduleName" -> number
-        )(Module.apply)(Module.unapply)
-      )
+      "modules" -> list(number)
     )(Single.apply)(Single.unapply)
   )
 

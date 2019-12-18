@@ -49,9 +49,6 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       },
       successForm => {
         println(successForm.modules)
-        successForm.modules.foreach { module =>
-          println(module.name)
-        }
 
         request.body
           .file("gradeFile")
@@ -70,6 +67,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
               // Create new appreciation in database
               petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university)
+              dbController.appendModuleToAppreciation(petitionId, successForm.modules)
 
               // Remove existing directory recursive
               if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {

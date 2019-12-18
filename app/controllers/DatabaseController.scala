@@ -15,8 +15,9 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   private val db = dbapi.database("default")
 
   private val appreciationEntity = "appreciation"
-  private val userEntity = "user"
   private val modulesEntity = "modules"
+  private val appreciationModulesEntity = s"${appreciationEntity}_${modulesEntity}"
+  private val userEntity = "user"
 
   // Check database integrity
   def checkDBIntegrity(): Unit = {
@@ -40,9 +41,9 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                name VARCHAR NOT NULL
                );""").execute()
           success = SQL(
-            s"""CREATE TABLE IF NOT EXISTS "${appreciationEntity}_${modulesEntity}" (
+            s"""CREATE TABLE IF NOT EXISTS "${appreciationModulesEntity}" (
                appreciation_id SERIAL REFERENCES ${appreciationEntity}(id),
-               module_id SERIAL REFERENCES ${appreciationEntity}(id)
+               module_id SERIAL REFERENCES ${modulesEntity}(id)
                );""").execute()
           success =
             SQL(
@@ -73,7 +74,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
           success = SQL(
             s"""CREATE TABLE IF NOT EXISTS "${appreciationEntity}_${modulesEntity}" (
                appreciation_id SERIAL REFERENCES ${appreciationEntity}(id),
-               module_id SERIAL REFERENCES ${appreciationEntity}(id)
+               module_id SERIAL REFERENCES ${modulesEntity}(id)
                );""").execute()
           success =
             SQL(
@@ -131,6 +132,27 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
             .executeUpdate()
       }
       return amountUpdated
+    }
+  }
+
+  // Append module to created appreciation
+  def appendModuleToAppreciation(aId: Long, mIdList: List[Int]): Long = {
+    checkDBIntegrity()
+    db.withConnection { implicit c =>
+      var id: Option[Long] = Some(0)
+      ConfigFactory.load().getString("db.default.driver") match {
+        case "com.mysql.jdbc.Driver" => // MySQL
+          mIdList.foreach( mId =>
+            id = SQL(s"""INSERT INTO ${appreciationModulesEntity} (appreciation_id, module_id) values (${aId}, ${mId})""")
+              .executeInsert()
+          )
+        case "org.postgresql.Driver" => // PostgreSQL
+          mIdList.foreach( mId =>
+            id = SQL(s"""INSERT INTO "${appreciationModulesEntity}" (appreciation_id, module_id) values (${aId}, ${mId})""")
+              .executeInsert()
+          )
+      }
+      return id.getOrElse(0)
     }
   }
 

@@ -190,7 +190,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   // GET: Logout current logged user
   def logout: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    Redirect(routes.HomeController.home()).withNewSession /*.flashing("success" -> "Sie wurden erfolgreich abgemeldet!")*/
+    Redirect(routes.HomeController.home()).withNewSession.flashing("success" -> "Sie wurden erfolgreich abgemeldet!")
   }
 
   // GET: Admin panel

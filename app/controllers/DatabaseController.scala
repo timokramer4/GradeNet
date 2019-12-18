@@ -142,12 +142,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       var id: Option[Long] = Some(0)
       ConfigFactory.load().getString("db.default.driver") match {
         case "com.mysql.jdbc.Driver" => // MySQL
-          mIdList.foreach( mId =>
+          mIdList.foreach(mId =>
             id = SQL(s"""INSERT INTO ${appreciationModulesEntity} (appreciation_id, module_id) values (${aId}, ${mId})""")
               .executeInsert()
           )
         case "org.postgresql.Driver" => // PostgreSQL
-          mIdList.foreach( mId =>
+          mIdList.foreach(mId =>
             id = SQL(s"""INSERT INTO "${appreciationModulesEntity}" (appreciation_id, module_id) values (${aId}, ${mId})""")
               .executeInsert()
           )
@@ -233,12 +233,11 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
             SQL(s"""SELECT * from "${appreciationEntity}" WHERE id = ${id}""").as(parser.single)
         }
       }
-
       return result
     }
   }
 
-  def getModules(): List[Module] ={
+  def getModulesFromAppreciation(id: Int): List[Module] = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val parser: RowParser[Module] = {
@@ -247,7 +246,28 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
         }
       }
 
-      val result : List[Module] = {
+      val result: List[Module] = {
+        ConfigFactory.load().getString("db.default.driver") match {
+          case "com.mysql.jdbc.Driver" => // MySQL
+            SQL(s"""SELECT * from ${appreciationEntity} WHERE id = ${id}""").as(parser.*)
+          case "org.postgresql.Driver" => // PostgreSQL
+            SQL(s"""SELECT ${modulesEntity}.id, ${modulesEntity}.name from "${appreciationEntity}" JOIN "${appreciationModulesEntity}" ON ("${appreciationEntity}".id = "${appreciationModulesEntity}".appreciation_id) JOIN "${modulesEntity}" ON ("${appreciationModulesEntity}".module_id = "${modulesEntity}".id) WHERE "${appreciationEntity}".id = ${id}""").as(parser.*)
+        }
+      }
+      return result
+    }
+  }
+
+  def getModules(): List[Module] = {
+    checkDBIntegrity()
+    db.withConnection { implicit c =>
+      val parser: RowParser[Module] = {
+        int("id") ~ str("name") map {
+          case id ~ name => Module(id, name)
+        }
+      }
+
+      val result: List[Module] = {
         try {
           ConfigFactory.load().getString("db.default.driver") match {
             case "com.mysql.jdbc.Driver" => // MySQL

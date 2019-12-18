@@ -8,7 +8,7 @@ import controllers.Forms.StateForm._
 import controllers.Forms.LoginForm._
 import javax.inject._
 import models.State._
-import models.{Student, User}
+import models.{Module, Student, User}
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{AnyContent, _}
 import controllers.Hasher.generateHash
@@ -207,7 +207,9 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       val appreciationData: Student = dbController.getSingleAppreciation(id)
       val uploadedFiles: List[File] = getListOfFiles(id)
       val stateList: List[Int] = getStateList()
-      Ok(views.html.main("Admin Panel", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList)))
+      val moduleList: List[Module] = dbController.getModulesFromAppreciation(id)
+      moduleList.foreach(println)
+      Ok(views.html.main("Admin Panel", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList)))
     } else {
       Redirect(routes.HomeController.loginPage())
     }

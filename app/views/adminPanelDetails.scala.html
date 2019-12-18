@@ -1,5 +1,5 @@
 @import java.io.File
-@(appreciation: Student, files: List[File], stateList: List[Int])(implicit requestHeader: RequestHeader, pageTitle: String = "Antrag", flash: Flash)
+@(appreciation: Student, files: List[File], stateList: List[Int], moduleList: List[Module])(implicit requestHeader: RequestHeader, pageTitle: String = "Antrag", flash: Flash)
 
     @import models.State._
     @import models.Student._
@@ -74,6 +74,25 @@
                         <th scope="row">Email</th>
                         <td>@getString(appreciation, "email")</td>
                     </tr>
+                    @if(moduleList.nonEmpty) {
+                        <tr>
+                            <th scope="row">Typ</th>
+                            <td>Einzelleistungen</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Module</th>
+                            <td>
+                            @for(module <- moduleList){
+                                <li>@module.name</li>
+                            }
+                            </td>
+                        </tr>
+                    } else {
+                        <tr>
+                            <th scope="row">Typ</th>
+                            <td>Gesamtes Notenkonto</td>
+                        </tr>
+                    }
                     <tr>
                         <th scope="row">Status</th>
                         <td>

@@ -4,7 +4,7 @@
 * two arguments, a `String` for the title of the page and an `Html`
 * object to insert into the body of the page.
 *@
-@(title: String)(content: Html)
+@(title: String, content: Html)(implicit session: Session, request: Request[AnyContent], flash: Flash)
 
 <!DOCTYPE html>
 <html lang="en">
@@ -18,6 +18,7 @@
             <!-- Bootstrap CSS -->
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
             <!-- FontAwesome CSS -->
         <script src="https://kit.fontawesome.com/fb79a9de4b.js" crossorigin="anonymous"></script>
 
@@ -30,6 +31,9 @@
         <script src="/assets/javascripts/dataTables.js"></script>
         <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
         <script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+
+            <!-- Custom CSS -->
+        <link rel="stylesheet" href="/assets/css/custom.css">
     </head>
     <body>
             <!-- Navigation -->
@@ -58,17 +62,30 @@
                 </ul>
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
-                        <a href="@routes.HomeController.adminPanel">
+                    @if(session.get("connected") && request.uri.contains(routes.HomeController.adminPanel.toString())) {
+                        <a href="@routes.HomeController.logout">
                             <button class="btn btn-outline-danger my-2 my-sm-0" type="submit">
-                                <i class="fas fa-sign-in-alt"></i>&nbsp;&nbsp;Admin-Panel
+                                <i class="fas fa-sign-out-alt"></i>
+                                    &nbsp;&nbsp;Logout
                             </button>
                         </a>
+                    } else {
+                        <a href="@routes.HomeController.adminPanel">
+                            <button class="btn btn-outline-danger my-2 my-sm-0" type="submit">
+                                <i class="fas fa-sign-in-alt"></i>
+                                    &nbsp;&nbsp;Admin-Panel
+                            </button>
+                        </a>
+                    }
                     </li>
                 </ul>
             </div>
         </nav>
 
+            <!-- Page Content -->
+        <div class="container mt-4 mb-3">
         @content
+        </div>
 
         <script>
                 // Data tables

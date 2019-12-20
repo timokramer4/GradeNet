@@ -48,47 +48,102 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         Redirect(routes.HomeController.appreciationSingle).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
       },
       successForm => {
-        println(successForm.modules)
+        var i: Int = 0
+        var firstFile: Boolean = true
+        var petitionId: Long = 0
+        object State {
+          val SUCCESS = 0
+          val MISSING_FILES = 1
+          val WRONG_FILE_TYPE = 2
+        }
+        var formError: Int = State.SUCCESS
 
-        request.body
-          .file("gradeFile")
-          .map { file =>
-            // Only get the last part of the filename without path
-            val filename: Path = Paths.get(file.filename).getFileName
-            val fileArray: Array[String] = Paths.get(file.filename).getFileName().toString().split('.')
-            val fileType: String = fileArray(fileArray.length - 1)
-            var petitionId: Long = 0
+        val moduleList: List[Module] = dbController.getModuleFromIntList(successForm.modules)
 
-            if (fileType == "pdf") {
-              // Create upload dir, if not exists
-              if (!Files.exists(Paths.get(uploadDir))) {
-                Files.createDirectory(Paths.get(uploadDir))
+        // Check amount of files
+        if (moduleList.size == request.body.files.size - 1) {
+          request.body.files.foreach { file =>
+            // Iterate if there are no errors in form data
+            if (formError == State.SUCCESS) {
+              // Only get the last part of the filename without path
+              val fileArray: Array[String] = Paths.get(file.filename).getFileName.toString().split('.')
+              val fileType: String = fileArray(fileArray.length - 1)
+
+              // First File: Grading file
+              if (firstFile) {
+                if (fileType == "pdf") {
+                  // Create upload dir, if not exists
+                  if (!Files.exists(Paths.get(uploadDir))) {
+                    Files.createDirectory(Paths.get(uploadDir))
+                  }
+
+                  // Create new appreciation in database
+                  petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university)
+
+                  // Remove existing directory recursive
+                  if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
+                    val dir = new Directory(new File(s"$uploadDir/$petitionId"))
+                    dir.deleteRecursively()
+                  }
+
+                  // Create new directory
+                  tmpUploadDir = Files.createDirectory(Paths.get(s"$uploadDir/$petitionId"))
+
+                  // Upload file in new directory
+                  file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/Notenkonto.$fileType"), replace = false)
+                  firstFile = false
+                } else {
+                  formError = State.WRONG_FILE_TYPE
+                }
               }
+              // Other files: Module descriptions
+              else {
+                if (fileType == "pdf") {
+                  // Create module instance
+                  dbController.appendModuleToAppreciation(petitionId, moduleList(i - 1).id)
 
-              // Create new appreciation in database
-              petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university)
-              dbController.appendModuleToAppreciation(petitionId, successForm.modules)
-
-              // Remove existing directory recursive
-              if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
-                val dir = new Directory(new File(s"$uploadDir/$petitionId"))
-                dir.deleteRecursively()
+                  // Upload file in new directory
+                  file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/${moduleList(i - 1).name}.$fileType"), replace = false)
+                } else {
+                  formError = State.WRONG_FILE_TYPE
+                }
               }
-
-              // Create new directory
-              tmpUploadDir = Files.createDirectory(Paths.get(s"$uploadDir/$petitionId"))
-
-              // Upload file in new directory
-              file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/$filename"), replace = false)
-
-              // Redirect and show success alert after successfully transfer all form data
-              Redirect(routes.HomeController.appreciationSingle).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
-            } else {
-              Redirect(routes.HomeController.appreciationSingle).flashing("error" -> "Es sind nur PDF-Dateien als Anhang erlaubt!")
             }
-          }.getOrElse {
-          // Redirect and show error
-          Redirect(routes.HomeController.appreciationSingle).flashing("error" -> "Fehlender Anhang. Ein Antrag ohne Anhang ist nicht möglich!")
+            i += 1
+          }
+        }
+        // Too few files uploaded
+        else {
+          formError = State.MISSING_FILES
+        }
+
+        // Determine the specific error
+        if (formError != State.SUCCESS) {
+          // Remove all appreciation data in database
+          dbController.removeAppreciation(petitionId, true)
+
+          // Remove existing directory recursive
+          if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
+            val dir = new Directory(new File(s"$uploadDir/$petitionId"))
+            dir.deleteRecursively()
+          }
+
+          // Error: No file uploaded
+          if (formError == State.MISSING_FILES) {
+            Redirect(routes.HomeController.appreciationSingle).flashing("error" -> "Einer oder mehrere fehlende Anhänge. Jeder Antrag muss min. ein Notenkonto und für jedes Modul eine Beschreibung im PDF-Format enthalten!")
+          }
+          // Error: No valid file format
+          else if (formError == State.WRONG_FILE_TYPE) {
+            Redirect(routes.HomeController.appreciationSingle).flashing("error" -> "Es sind nur PDF-Dateien als Anhang erlaubt!")
+          }
+          // Unknown error
+          else {
+            Redirect(routes.HomeController.appreciationSingle).flashing("error" -> "Ein unbekannter Fehler ist aufgetreten!")
+          }
+        }
+        // Success: If all data correct
+        else {
+          Redirect(routes.HomeController.appreciationSingle).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
         }
       }
     )
@@ -113,7 +168,6 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
           .file("gradeFile")
           .map { file =>
             // Only get the last part of the filename without path
-            val filename: Path = Paths.get(file.filename).getFileName
             val fileArray: Array[String] = Paths.get(file.filename).getFileName().toString().split('.')
             val fileType: String = fileArray(fileArray.length - 1)
             var petitionId: Long = 0
@@ -137,7 +191,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
               tmpUploadDir = Files.createDirectory(Paths.get(s"$uploadDir/$petitionId"))
 
               // Upload file in new directory
-              file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/$filename"), replace = false)
+              file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/Notenkonto.$fileType"), replace = false)
 
               // Redirect and show success alert after successfully transfer all form data
               Redirect(routes.HomeController.appreciationAll).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
@@ -208,7 +262,6 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       val uploadedFiles: List[File] = getListOfFiles(id)
       val stateList: List[Int] = getStateList()
       val moduleList: List[Module] = dbController.getModulesFromAppreciation(id)
-      moduleList.foreach(println)
       Ok(views.html.main("Admin Panel", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList)))
     } else {
       Redirect(routes.HomeController.loginPage())
@@ -278,6 +331,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     }
   }
 
+  // GET: Download all files from single appreciation
   def downloadAllFiles(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (checkLogin(request)) {
       getListOfFiles(id).foreach { file =>

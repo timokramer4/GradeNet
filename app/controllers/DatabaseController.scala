@@ -136,21 +136,17 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   }
 
   // Append module to created appreciation
-  def appendModuleToAppreciation(aId: Long, mIdList: List[Int]): Long = {
+  def appendModuleToAppreciation(aId: Long, mId: Int): Long = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       var id: Option[Long] = Some(0)
       ConfigFactory.load().getString("db.default.driver") match {
         case "com.mysql.jdbc.Driver" => // MySQL
-          mIdList.foreach(mId =>
-            id = SQL(s"""INSERT INTO ${appreciationModulesEntity} (appreciation_id, module_id) values (${aId}, ${mId})""")
-              .executeInsert()
-          )
+          id = SQL(s"""INSERT INTO ${appreciationModulesEntity} (appreciation_id, module_id) values (${aId}, ${mId})""")
+            .executeInsert()
         case "org.postgresql.Driver" => // PostgreSQL
-          mIdList.foreach(mId =>
-            id = SQL(s"""INSERT INTO "${appreciationModulesEntity}" (appreciation_id, module_id) values (${aId}, ${mId})""")
-              .executeInsert()
-          )
+          id = SQL(s"""INSERT INTO "${appreciationModulesEntity}" (appreciation_id, module_id) values (${aId}, ${mId})""")
+            .executeInsert()
       }
       return id.getOrElse(0)
     }
@@ -161,10 +157,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val amountDelete: Int =
-        SQL(s"""DELETE FROM "${appreciationEntity}" WHERE id = ${id}""")
+        SQL(
+          s"""DELETE FROM "${appreciationEntity}" WHERE id = ${id};
+          DELETE FROM ${appreciationModulesEntity} WHERE appreciation_id = ${id}""")
           .executeUpdate()
       if (decrement) {
-        println("CurrentID" + id)
+        println("CurrentID: " + id)
         ConfigFactory.load().getString("db.default.driver") match {
           case "com.mysql.jdbc.Driver" => // MySQL
             val decrementSuccess: Boolean =
@@ -173,7 +171,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                   if (id > 1) {
                     id - 1
                   } else {
-                    id
+                    1
                   }
                 };""").execute()
           case "org.postgresql.Driver" => // PostgreSQL
@@ -183,7 +181,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                   if (id > 1) {
                     id - 1
                   } else {
-                    id
+                    1
                   }
                 };""").execute()
         }
@@ -210,7 +208,6 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
         }
 
       }
-
       return result
     }
   }
@@ -285,6 +282,40 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       }
 
       return result
+    }
+  }
+
+  def getModuleFromIntList(intList: List[Int]): List[Module] = {
+    checkDBIntegrity()
+    db.withConnection { implicit c =>
+      val parser: RowParser[Module] = {
+        int("id") ~ str("name") map {
+          case id ~ name => Module(id, name)
+        }
+      }
+
+      var moduleList: List[Module] = List[Module]()
+      try {
+        ConfigFactory.load().getString("db.default.driver") match {
+          case "com.mysql.jdbc.Driver" => { // MySQL
+            intList.foreach(moduleId =>
+              moduleList = SQL(s"""SELECT * FROM ${modulesEntity} WHERE id = ${moduleId}""").as(parser.single) :: moduleList
+            )
+          }
+          case "org.postgresql.Driver" => { // PostgreSQL
+            intList.foreach { moduleId =>
+              moduleList = SQL(s"""SELECT * FROM "${modulesEntity}" WHERE id = ${moduleId}""").as(parser.single) :: moduleList
+            }
+          }
+        }
+      }
+      catch {
+        case e: Exception => {
+          println(s"""Es konnten keine Module gefunden werden!""")
+          List(Module(0, ""))
+        }
+      }
+      return moduleList
     }
   }
 

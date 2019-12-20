@@ -69,11 +69,12 @@
                     Symbol("_label") -> "Email",
                     Symbol("placeholder") -> "Email",
                     Symbol("required") -> "")
-                @helper.select(aFormAll("university"), uniList,
+                @helper.select(aFormAll("university"), Seq(("Hochschule Flensburg", "Hochschule Flensburg")),
                     Symbol("_class") -> "form-group col-md-5",
                     Symbol("class") -> "form-control",
                     Symbol("_showConstraints") -> false,
-                    Symbol("_label") -> "Email",
+                    Symbol("_label") -> "Hochschule/Uni",
+                    Symbol("disabled") -> "true",
                     Symbol("required") -> "")
                 <div class="form-group col-md-12">
                     <label>Notenkonto</label>

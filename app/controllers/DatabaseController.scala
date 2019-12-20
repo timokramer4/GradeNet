@@ -5,7 +5,7 @@ import anorm.{RowParser, SQL, _}
 import com.typesafe.config.ConfigFactory
 import javax.inject.Inject
 import models.State._
-import models.{Module, State, Student, User}
+import models.{Module, State, Appreciation, User}
 import play.api.db.DBApi
 import play.api.mvc.ControllerComponents
 
@@ -88,16 +88,6 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       }
     }
   }
-
-  // Database entity definition
-  case class Appreciation(id: Option[Long] = None,
-                          firstName: String,
-                          lastName: String,
-                          email: String,
-                          matrNr: Int,
-                          university: Int,
-                          state: Int
-                         )
 
   // Create new appreciation in database
   def createAppreciation(firstName: String, lastName: String, email: String, matrNr: Int, university: String): Long = {
@@ -190,16 +180,16 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   }
 
   // Get all appreciations
-  def getAllAppreciations(): List[Student] = {
+  def getAllAppreciations(): List[Appreciation] = {
     checkDBIntegrity()
 
     db.withConnection { implicit c =>
-      val parser: RowParser[Student] =
+      val parser: RowParser[Appreciation] =
         int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("state") map {
-          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => Student(id, fn, ln, mnr, email, uni, switchStateInt(state).asInstanceOf[State])
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => Appreciation(id, fn, ln, mnr, email, uni, switchStateInt(state).asInstanceOf[State])
         }
 
-      val result: List[Student] = {
+      val result: List[Appreciation] = {
         ConfigFactory.load().getString("db.default.driver") match {
           case "com.mysql.jdbc.Driver" => // MySQL
             SQL(s"""SELECT * FROM ${appreciationEntity}""").as(parser.*)
@@ -213,16 +203,16 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   }
 
   // Get single appreciation
-  def getSingleAppreciation(id: Int): Student = {
+  def getSingleAppreciation(id: Int): Appreciation = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
-      val parser: RowParser[Student] = {
+      val parser: RowParser[Appreciation] = {
         int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("state") map {
-          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => Student(id, fn, ln, mnr, email, uni, switchStateInt(state).asInstanceOf[State])
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => Appreciation(id, fn, ln, mnr, email, uni, switchStateInt(state).asInstanceOf[State])
         }
       }
 
-      val result: Student = {
+      val result: Appreciation = {
         ConfigFactory.load().getString("db.default.driver") match {
           case "com.mysql.jdbc.Driver" => // MySQL
             SQL(s"""SELECT * from ${appreciationEntity} WHERE id = ${id}""").as(parser.single)

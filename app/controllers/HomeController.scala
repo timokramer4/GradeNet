@@ -8,7 +8,7 @@ import controllers.Forms.StateForm._
 import controllers.Forms.LoginForm._
 import javax.inject._
 import models.State._
-import models.{Module, Student, User}
+import models.{Module, Appreciation, User}
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{AnyContent, _}
 import controllers.Hasher.generateHash
@@ -223,7 +223,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         val passInput: String = generateHash(successForm.password)
         println("Input Hash: " + passInput)
         println("DB Hash: " + user.password)
-        println(user.admin)
+        println("Admin: " + user.admin)
         if (user.password == passInput) {
           if (user.admin) {
             println("Logged in successfully!")
@@ -248,7 +248,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   // GET: Admin panel
   def adminPanel: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (checkLogin(request)) {
-      val data: List[Student] = dbController.getAllAppreciations()
+      val data: List[Appreciation] = dbController.getAllAppreciations()
       Ok(views.html.main("Admin Panel", views.html.adminPanel(data)))
     } else {
       Redirect(routes.HomeController.loginPage())
@@ -258,7 +258,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   // GET: Admin panel details
   def adminPanelDetails(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (checkLogin(request)) {
-      val appreciationData: Student = dbController.getSingleAppreciation(id)
+      val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
       val uploadedFiles: List[File] = getListOfFiles(id)
       val stateList: List[Int] = getStateList()
       val moduleList: List[Module] = dbController.getModulesFromAppreciation(id)

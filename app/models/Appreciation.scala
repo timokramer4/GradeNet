@@ -2,10 +2,10 @@ package models
 
 import models.State.stateToString
 
-case class Student(id: Int, firstName: String, lastName: String, matrNr: Int, email: String, university: String, state: State)
+case class Appreciation(id: Int, firstName: String, lastName: String, matrNr: Int, email: String, university: String, state: State)
 
-object Student {
-  def getString(student: Student, key: String): String = {
+object Appreciation {
+  def getString(student: Appreciation, key: String): String = {
     key match {
       case "id" => student.id.toString()
       case "firstName" => student.firstName
@@ -20,9 +20,9 @@ object Student {
     }
   }
 
-  def getState(student: Student): State =
+  def getState(student: Appreciation): State =
     student.state
 
-  def getId(student: Student): Int =
+  def getId(student: Appreciation): Int =
     student.id
 }

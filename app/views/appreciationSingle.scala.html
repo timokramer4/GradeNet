@@ -76,9 +76,6 @@
                 <div class="form-group col-md-12">
                     <label>Notenkonto</label>
                     <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Hochladen</span>
-                        </div>
                         <div class="custom-file">
                             @helper.inputFile(aFormSingle("gradeFile"),
                                 Symbol("class") -> "custom-file-input",
@@ -95,9 +92,6 @@
                     <div class="card-header">
                         <div class="row align-items-center">
                             <div class="col">Neues Modul</div>
-                            <div class="col">
-                                <button id="removeModule" type="button" class="btn btn-danger float-right"><i class="fas fa-minus"></i></button>
-                            </div>
                         </div>
                     </div>
                     <div class="card-body">
@@ -110,9 +104,6 @@
                         <div class="form-group">
                             <label>Modulbeschreibung</label>
                             <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text">Hochladen</span>
-                                </div>
                                 <div class="custom-file">
                                     @helper.inputFile(aFormSingle("moduleDescription"),
                                         Symbol("class") -> "custom-file-input",
@@ -134,14 +125,24 @@
 
         <script>
                 $('#addModule').on("click", function () {
+                    // Append first module card remove button
+                    if ($('.card-header').length == 1 && $('.row.align-items-center')[0].childElementCount < 2) {
+                        var removeBtn = document.createElement("div");
+                        removeBtn.classList = "col";
+                        removeBtn.id = "removeModule"
+                        removeBtn.innerHTML = `<button type="button" id="removeModuleBtn" class="btn btn-danger float-right"><i class="fas fa-minus"></i></button>`;
+                        $('.row.align-items-center')[0].append(removeBtn)
+                    }
+
+                    // Append new module card
                     var cardHolder = $("#cardHolder");
                     var card = document.createElement("div")
                     card.classList = "card text-white bg-dark mb-3 align-middle"
                     card.innerHTML = `<div class="card-header">
                         <div class="row align-items-center">
                             <div class="col">Neues Modul</div>
-                            <div class="col">
-                                <button id="removeModule" type="button" class="btn btn-danger float-right"><i class="fas fa-minus"></i></button>
+                            <div class="col" id="removeModule">
+                                <button id="removeModuleBtn" class="btn btn-danger float-right"><i class="fas fa-minus"></i></button>
                             </div>
                         </div>
                     </div>
@@ -155,9 +156,6 @@
                         <div class="form-group">
                             <label>Modulbeschreibung</label>
                             <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text">Hochladen</span>
-                                </div>
                                 <div class="custom-file">
                                     @helper.inputFile(aFormSingle("moduleDescription"),
                                         Symbol("class") -> "custom-file-input",
@@ -173,11 +171,16 @@
                     cardHolder.append(card);
                 });
 
-                $('body').on("click", 'button#removeModule', function (event) {
+                // Remove module click event
+                $('body').on("click", 'button#removeModuleBtn', function (event) {
                     event.stopPropagation();
                     event.stopImmediatePropagation();
-                    if ($("button#removeModule").length > 1) {
+                    if ($(".card").length > 1) {
                         $(this).parent().parent().parent().parent().remove();
+
+                        if ($(".card").length == 1) {
+                            $("div#removeModule").remove()
+                        }
                     }
                 });
         </script>

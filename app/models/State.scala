@@ -1,5 +1,7 @@
 package models
 
+import play.twirl.api.Html
+
 sealed trait State
 
 case object Open extends State
@@ -65,7 +67,12 @@ object State {
       case Processing => s"${contentType}-warning"
       case Meeting => s"${contentType}-danger"
       case Closed => s"${contentType}-success"
-      case _ => ""
+      case _ => {
+        contentType match {
+          case "alert" => s"${contentType}-info"
+          case _ => ""
+        }
+      }
     }
   }
 
@@ -75,5 +82,17 @@ object State {
       stateList = List(i).:::(stateList)
     }
     return stateList
+  }
+
+  def getDescription(appreciation: Appreciation): Html = {
+    appreciation.state match {
+      case Open => Html.apply("Ihr Antrag ist bei uns <strong>eingegangen</strong> und wird so schnell wie möglich bearbeitet!")
+      case Processing => Html.apply("Ihr Antrag <strong>wird derzeit bearbeitet</strong>! Bitte haben Sie noch einen Moment Geduld.")
+      case Meeting => Html.apply("Um den Auftrag abschließen zu können, muss zuvor ein persönliches Gespräch erfolgen. Bitte wenden Sie " +
+        s"sich für die Terminvereinbarung mit der o.g. Antragsnummer (<a href='/state/${appreciation.id}'>#${appreciation.id}</a>) an die Email-Adresse " +
+        s"<a href='mailto:info@wasauchimmer.de'>info@wasauchimmer.de</a>.")
+      case Closed => Html.apply(s"Ihr Auftrag wurde <strong>erfolgreich</strong> und ohne Probleme <strong>abgeschlossen</strong>. Die Noten wurden in Ihrem Notenkonto hinzugefügt.")
+      case _ => Html.apply("")
+    }
   }
 }

@@ -196,7 +196,6 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
           case "org.postgresql.Driver" => // PostgreSQL
             SQL(s"""SELECT * FROM "${appreciationEntity}"""").as(parser.*)
         }
-
       }
       return result
     }
@@ -226,41 +225,125 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   def getModulesFromAppreciation(id: Int): List[Module] = {
     checkDBIntegrity()
-    db.withConnection { implicit c =>
-      val parser: RowParser[Module] = {
-        int("id") ~ str("name") map {
-          case id ~ name => Module(id, name)
+    db.withConnection {
+      implicit c =>
+        val parser: RowParser[Module] = {
+          int("id") ~ str("name") map {
+            case id ~ name => Module(id, name)
+          }
         }
-      }
 
-      val result: List[Module] = {
-        ConfigFactory.load().getString("db.default.driver") match {
-          case "com.mysql.jdbc.Driver" => // MySQL
-            SQL(s"""SELECT * from ${appreciationEntity} WHERE id = ${id}""").as(parser.*)
-          case "org.postgresql.Driver" => // PostgreSQL
-            SQL(s"""SELECT ${modulesEntity}.id, ${modulesEntity}.name from "${appreciationEntity}" JOIN "${appreciationModulesEntity}" ON ("${appreciationEntity}".id = "${appreciationModulesEntity}".appreciation_id) JOIN "${modulesEntity}" ON ("${appreciationModulesEntity}".module_id = "${modulesEntity}".id) WHERE "${appreciationEntity}".id = ${id}""").as(parser.*)
+        val result: List[Module] = {
+          ConfigFactory.load().getString("db.default.driver") match {
+            case "com.mysql.jdbc.Driver" => // MySQL
+              SQL(
+                s"""SELECT * from ${
+                  appreciationEntity
+                } WHERE id = ${
+                  id
+                }""").as(parser.*)
+            case "org.postgresql.Driver" => // PostgreSQL
+              SQL(
+                s"""SELECT ${
+                  modulesEntity
+                }.id, ${
+                  modulesEntity
+                }.name from "${
+                  appreciationEntity
+                }" JOIN "${
+                  appreciationModulesEntity
+                }" ON ("${
+                  appreciationEntity
+                }".id = "${
+                  appreciationModulesEntity
+                }".appreciation_id) JOIN "${
+                  modulesEntity
+                }" ON ("${
+                  appreciationModulesEntity
+                }".module_id = "${
+                  modulesEntity
+                }".id) WHERE "${
+                  appreciationEntity
+                }".id = ${
+                  id
+                }""").as(parser.*)
+          }
         }
-      }
-      return result
+        return result
     }
   }
 
   def getModules(): List[Module] = {
     checkDBIntegrity()
-    db.withConnection { implicit c =>
-      val parser: RowParser[Module] = {
-        int("id") ~ str("name") map {
-          case id ~ name => Module(id, name)
+    db.withConnection {
+      implicit c =>
+        val parser: RowParser[Module] = {
+          int("id") ~ str("name") map {
+            case id ~ name => Module(id, name)
+          }
         }
-      }
 
-      val result: List[Module] = {
+        val result: List[Module] = {
+          try {
+            ConfigFactory.load().getString("db.default.driver") match {
+              case "com.mysql.jdbc.Driver" => // MySQL
+                SQL(
+                  s"""SELECT * FROM ${
+                    modulesEntity
+                  }""").as(parser.*)
+              case "org.postgresql.Driver" => // PostgreSQL
+                SQL(
+                  s"""SELECT * FROM "${
+                    modulesEntity
+                  }"""").as(parser.*)
+            }
+          }
+          catch {
+            case e: Exception => {
+              println(s"""Es konnten keine Module gefunden werden!""")
+              List(Module(0, ""))
+            }
+          }
+        }
+
+        return result
+    }
+  }
+
+  def getModuleFromIntList(intList: List[Int]): List[Module] = {
+    checkDBIntegrity()
+    db.withConnection {
+      implicit c =>
+        val parser: RowParser[Module] = {
+          int("id") ~ str("name") map {
+            case id ~ name => Module(id, name)
+          }
+        }
+
+        var moduleList: List[Module] = List[Module]()
         try {
           ConfigFactory.load().getString("db.default.driver") match {
-            case "com.mysql.jdbc.Driver" => // MySQL
-              SQL(s"""SELECT * FROM ${modulesEntity}""").as(parser.*)
-            case "org.postgresql.Driver" => // PostgreSQL
-              SQL(s"""SELECT * FROM "${modulesEntity}"""").as(parser.*)
+            case "com.mysql.jdbc.Driver" => { // MySQL
+              intList.foreach(moduleId =>
+                moduleList = SQL(
+                  s"""SELECT * FROM ${
+                    modulesEntity
+                  } WHERE id = ${
+                    moduleId
+                  }""").as(parser.single) :: moduleList
+              )
+            }
+            case "org.postgresql.Driver" => { // PostgreSQL
+              intList.foreach {
+                moduleId =>
+                  moduleList = SQL(
+                    s"""SELECT * FROM "${
+                      modulesEntity
+                    }" WHERE id = ${
+                      moduleId
+                    }""").as(parser.single) :: moduleList
+              }
+            }
           }
         }
         catch {
@@ -269,73 +352,51 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
             List(Module(0, ""))
           }
         }
-      }
-
-      return result
-    }
-  }
-
-  def getModuleFromIntList(intList: List[Int]): List[Module] = {
-    checkDBIntegrity()
-    db.withConnection { implicit c =>
-      val parser: RowParser[Module] = {
-        int("id") ~ str("name") map {
-          case id ~ name => Module(id, name)
-        }
-      }
-
-      var moduleList: List[Module] = List[Module]()
-      try {
-        ConfigFactory.load().getString("db.default.driver") match {
-          case "com.mysql.jdbc.Driver" => { // MySQL
-            intList.foreach(moduleId =>
-              moduleList = SQL(s"""SELECT * FROM ${modulesEntity} WHERE id = ${moduleId}""").as(parser.single) :: moduleList
-            )
-          }
-          case "org.postgresql.Driver" => { // PostgreSQL
-            intList.foreach { moduleId =>
-              moduleList = SQL(s"""SELECT * FROM "${modulesEntity}" WHERE id = ${moduleId}""").as(parser.single) :: moduleList
-            }
-          }
-        }
-      }
-      catch {
-        case e: Exception => {
-          println(s"""Es konnten keine Module gefunden werden!""")
-          List(Module(0, ""))
-        }
-      }
-      return moduleList
+        return moduleList
     }
   }
 
   def getUser(username: String): User = {
     checkDBIntegrity()
-    db.withConnection { implicit c =>
-      val parser: RowParser[User] = {
-        str("username") ~ str("password") ~ bool("admin") map {
-          case username ~ password ~ admin => User(username, password, admin)
-        }
-      }
-
-      val result: User = {
-        try {
-          ConfigFactory.load().getString("db.default.driver") match {
-            case "com.mysql.jdbc.Driver" => // MySQL
-              SQL(s"""SELECT * FROM ${userEntity} WHERE username = '${username}' LIMIT 1""").as(parser.single)
-            case "org.postgresql.Driver" => // PostgreSQL
-              SQL(s"""SELECT * FROM "${userEntity}" WHERE username = '${username}' LIMIT 1""").as(parser.single)
+    db.withConnection {
+      implicit c =>
+        val parser: RowParser[User] = {
+          str("username") ~ str("password") ~ bool("admin") map {
+            case username ~ password ~ admin => User(username, password, admin)
           }
         }
-        catch {
-          case e: Exception => {
-            println(s"""Benutzer "${username}" nicht gefunden!""")
-            User("", "", false)
+
+        val result: User = {
+          try {
+            ConfigFactory.load().getString("db.default.driver") match {
+              case "com.mysql.jdbc.Driver" => // MySQL
+                SQL(
+                  s"""SELECT * FROM ${
+                    userEntity
+                  } WHERE username = '${
+                    username
+                  }' LIMIT 1""").as(parser.single)
+              case "org.postgresql.Driver" => // PostgreSQL
+                SQL(
+                  s"""SELECT * FROM "${
+                    userEntity
+                  }" WHERE username = '${
+                    username
+                  }' LIMIT 1""").as(parser.single)
+            }
+          }
+          catch {
+            case e: Exception => {
+              println(
+                s"""Benutzer "${
+                  username
+                }" nicht gefunden!""")
+              User("", "", false)
+            }
           }
         }
-      }
 
-      return result
+        return result
     }
   }
 }

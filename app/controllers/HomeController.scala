@@ -8,9 +8,9 @@ import controllers.Forms.StateForm._
 import controllers.Forms.LoginForm._
 import javax.inject._
 import models.State._
-import models.{Module, Appreciation, User}
+import models.{Appreciation, Module, State, User}
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
-import play.api.mvc.{AnyContent, _}
+import play.api.mvc.{Action, AnyContent, _}
 import controllers.Hasher.generateHash
 
 import scala.concurrent.ExecutionContext
@@ -29,12 +29,12 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   val uploadDir: String = "uploads"
 
   // GET: Landing page
-  def home() = Action { implicit request: Request[AnyContent] =>
+  def home(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     Ok(views.html.main("Startseite", views.html.home()))
   }
 
   // GET: Appreciation single grades
-  def appreciationSingle() = Action { implicit request: Request[AnyContent] =>
+  def appreciationSingle(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     val uniList: List[(String, String)] = jsonConverter(Json.parse(r.text)) // [{}, {}]
     val moduleList: List[(String, String)] = dbController.getModules().map(module => (module.id.toString, module.name))
@@ -150,7 +150,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   }
 
   // GET: Appreciation all grades
-  def appreciationAll() = Action { implicit request: Request[AnyContent] =>
+  def appreciationAll(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     val uniList: List[(String, String)] = jsonConverter(Json.parse(r.text))
     Ok(views.html.main("Antrag", views.html.appreciationAll(aFormAll, uniList)))
@@ -207,13 +207,18 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     )
   }
 
+  def showCurrentState(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    val appreciation: Appreciation = dbController.getSingleAppreciation(id)
+    Ok(views.html.main("Status", views.html.state(appreciation)))
+  }
+
   // GET: Login page
   def loginPage: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     Ok(views.html.main("Anmeldung", views.html.login()))
   }
 
   // POST: Login user
-  def login = Action(parse.anyContent) { implicit request =>
+  def login: Action[AnyContent] = Action(parse.anyContent) { implicit request =>
     loginForm.bindFromRequest.fold(
       errorForm => {
         Redirect(routes.HomeController.loginPage()).flashing("error" -> "Fehlende Angaben!")
@@ -269,7 +274,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   }
 
   // POST: Change appreciation state
-  def adminPanelDetailsChangeState(id: Int) = Action(parse.anyContent) { implicit request =>
+  def adminPanelDetailsChangeState(id: Int): Action[AnyContent] = Action(parse.anyContent) { implicit request =>
     if (checkLogin(request)) {
       stateForm.bindFromRequest.fold(
         errorForm => {

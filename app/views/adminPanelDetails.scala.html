@@ -50,92 +50,93 @@
             }
 
             <h3>Infos über den Antragsteller</h3>
-            <table class="table table-striped table-hover" with="100%">
-                <thead class="thead-dark">
-                    <tr>
-                        <th scope="col">Feld</th>
-                        <th scope="col">Inhalt</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <th scope="row">Vorname</th>
-                        <td>@getString(appreciation, "firstName")</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Nachname</th>
-                        <td>@getString(appreciation, "lastName")</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Matrikelnummer</th>
-                        <td>@getString(appreciation, "matrNr")</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Email</th>
-                        <td>@getString(appreciation, "email")</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Hochschule/Uni</th>
-                        <td>@getString(appreciation, "university")</td>
-                    </tr>
-                    @if(moduleList.nonEmpty) {
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" with="100%">
+                    <thead class="thead-dark">
                         <tr>
-                            <th scope="row">Typ</th>
-                            <td>Einzelleistungen</td>
+                            <th scope="col">Feld</th>
+                            <th scope="col">Inhalt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Vorname</th>
+                            <td>@getString(appreciation, "firstName")</td>
                         </tr>
                         <tr>
-                            <th scope="row">Module</th>
+                            <th scope="row">Nachname</th>
+                            <td>@getString(appreciation, "lastName")</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Matrikelnummer</th>
+                            <td>@getString(appreciation, "matrNr")</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Email</th>
+                            <td>@getString(appreciation, "email")</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Hochschule/Uni</th>
+                            <td>@getString(appreciation, "university")</td>
+                        </tr>
+                        @if(moduleList.nonEmpty) {
+                            <tr>
+                                <th scope="row">Typ</th>
+                                <td>Einzelleistungen</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Module</th>
+                                <td>
+                                @for(module <- moduleList) {
+                                    <li>@module.name</li>
+                                }
+                                </td>
+                            </tr>
+                        } else {
+                            <tr>
+                                <th scope="row">Typ</th>
+                                <td>Gesamtes Notenkonto</td>
+                            </tr>
+                        }
+                        <tr>
+                            <th scope="row">Status</th>
                             <td>
-                            @for(module <- moduleList){
-                                <li>@module.name</li>
-                            }
+                                <form action="@routes.HomeController.adminPanelDetailsChangeState(getId(appreciation))" method="POST" class="form-inline">
+                                    @helper.CSRF.formField
+                                <select class="custom-select m-1" id="state" name="state">
+                                @for(state <- stateList) {
+                                    <option value="@state"
+                                    @if(state == switchStateInt(getState(appreciation)).asInstanceOf[Int]) {selected}>@stateToString(state) </option>
+                                }
+                                </select>
+                                <button type="submit" class="btn btn-primary">Speichern</button>
+                                </form>
                             </td>
                         </tr>
-                    } else {
-                        <tr>
-                            <th scope="row">Typ</th>
-                            <td>Gesamtes Notenkonto</td>
-                        </tr>
-                    }
-                    <tr>
-                        <th scope="row">Status</th>
-                        <td>
-                            <form action="@routes.HomeController.adminPanelDetailsChangeState(getId(appreciation))" method="POST" class="form-inline">
-                                @helper.CSRF.formField
-                            <select class="custom-select m-1" id="state" name="state">
-                            @for(state <- stateList) {
-                                <option value="@state"
-                                @if(state == switchStateInt(getState(appreciation)).asInstanceOf[Int]) {selected}>@stateToString(state) </option>
-                            }
-                            </select>
-                            <button type="submit" class="btn btn-primary">Speichern</button>
-                            </form>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
 
             <br>
             <h3>Hochgeladene Dateien</h3>
-            <table class="table table-striped table-hover dataTable" with="100%">
-                <thead class="thead-dark">
-                    <tr>
-                        <th scope="col">Name</th>
-                        <th scope="col">Größe</th>
-                        <th scope="col">Aktion</th>
-                    </tr>
-                </thead>
-                <tbody>
-                @for(file <- files) {
-                    <tr class="clickable" data-href='@routes.HomeController.downloadFile(getId(appreciation), file.getName())' style="cursor: pointer;">
-                        <th>@file.getName()</th>
-                        <td>@formatSize(file.length)</td>
-                        <td></td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-            <a class="btn btn-primary float-right mt-3" href="@routes.HomeController.downloadAllFiles(getId(appreciation))" role="button">Alle Dateien herunterladen</a>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover dataTable" with="100%">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col" class="text-right">Größe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @for(file <- files) {
+                        <tr class="clickable" data-href='@routes.HomeController.downloadFile(getId(appreciation), file.getName())' style="cursor: pointer;">
+                            <th>@file.getName()</th>
+                            <td class="text-right">@formatSize(file.length)</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
             <script>
                     // Clickable table rows
                     $(".clickable").click(function () {

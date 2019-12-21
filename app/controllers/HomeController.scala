@@ -2,7 +2,6 @@ package controllers
 
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
-
 import controllers.Forms.AppreciationForm._
 import controllers.Forms.StateForm._
 import controllers.Forms.LoginForm._
@@ -12,7 +11,6 @@ import models.{Appreciation, Module, State, User}
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, _}
 import controllers.Hasher.generateHash
-
 import scala.concurrent.ExecutionContext
 import scala.reflect.io.Directory
 
@@ -293,6 +291,25 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     }
   }
 
+  // GET: Download a specific file
+  def downloadFile(id: Int, fileName: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    if (checkLogin(request)) {
+      implicit val ec = ExecutionContext.global
+      val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
+      Ok.sendFile(
+        content = new java.io.File(s"${uploadDir}/${id}/${fileName}"),
+        fileName = _ => s"Antrag#${id}_${appreciationData.lastName}_${appreciationData.firstName}_${fileName.replace(' ', '_')}",
+        inline = false
+      )
+    } else {
+      Redirect(routes.HomeController.loginPage())
+    }
+  }
+
+  // ======================
+  // Helper Functions
+  // ======================
+
   // Convert JSON Array in (value, content) pair for select field
   def jsonConverter(jsValue: JsValue): List[(String, String)] = {
     jsValue match {
@@ -322,33 +339,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     }
   }
 
-  // GET: Download a specific file
-  def downloadFile(id: Int, fileName: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    if (checkLogin(request)) {
-      implicit val ec = ExecutionContext.global
-      Ok.sendFile(
-        content = new java.io.File(s"${uploadDir}/${id}/${fileName}"),
-        fileName = _ => s"Antrag#${id}_${fileName}",
-        inline = false
-      )
-    } else {
-      Redirect(routes.HomeController.loginPage())
-    }
-  }
-
-  // GET: Download all files from single appreciation
-  def downloadAllFiles(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    if (checkLogin(request)) {
-      getListOfFiles(id).foreach { file =>
-        println(file.getName())
-        downloadFile(id, file.getName())
-      }
-      Redirect(routes.HomeController.adminPanelDetails(id))
-    } else {
-      Redirect(routes.HomeController.loginPage())
-    }
-  }
-
+  // Check login session
   def checkLogin(request: Request[AnyContent]): Boolean = {
     request.session
       .get("connected")

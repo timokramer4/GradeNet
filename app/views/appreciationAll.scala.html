@@ -36,61 +36,83 @@
             @helper.CSRF.formField
             <div class="form-row">
                 @helper.inputText(aFormAll("firstName"),
-                    Symbol("_class") -> "form-group col-md-6",
-                    Symbol("class") -> "form-control",
-                    Symbol("_showConstraints") -> false,
-                    Symbol("_label") -> "Vorname",
-                    Symbol("placeholder") -> "Vorname",
-                    Symbol("required") -> "")
+                Symbol("_class") -> "form-group col-md-6",
+                Symbol("class") -> "form-control",
+                Symbol("_showConstraints") -> false,
+                Symbol("_label") -> "Vorname",
+                Symbol("placeholder") -> "Vorname",
+                Symbol("required") -> "")
                 @helper.inputText(aFormAll("lastName"),
-                    Symbol("_class") -> "form-group col-md-6",
-                    Symbol("class") -> "form-control",
-                    Symbol("_showConstraints") -> false,
-                    Symbol("_label") -> "Nachname",
-                    Symbol("placeholder") -> "Nachname",
-                    Symbol("required") -> "")
+                Symbol("_class") -> "form-group col-md-6",
+                Symbol("class") -> "form-control",
+                Symbol("_showConstraints") -> false,
+                Symbol("_label") -> "Nachname",
+                Symbol("placeholder") -> "Nachname",
+                Symbol("required") -> "")
             </div>
-            <div class="form-row">
-                @helper.inputText(aFormAll("matrNr"),
-                    Symbol("_class") -> "form-group col-md-2",
-                    Symbol("class") -> "form-control",
-                    Symbol("_showConstraints") -> false,
-                    Symbol("_label") -> "Matrikelnummer",
-                    Symbol("placeholder") -> "Matrikelnr.",
-                    Symbol("type") -> "number",
-                    Symbol("min") -> "100000",
-                    Symbol("max") -> "999999",
-                    Symbol("required") -> "")
-                @helper.inputText(aFormAll("email"),
-                    Symbol("_class") -> "form-group col-md-5",
-                    Symbol("class") -> "form-control",
-                    Symbol("_showConstraints") -> false,
-                    Symbol("type") -> "email",
-                    Symbol("_label") -> "Email",
-                    Symbol("placeholder") -> "Email",
-                    Symbol("required") -> "")
-                @helper.select(aFormAll("university"), Seq(("Hochschule Flensburg", "Hochschule Flensburg")),
-                    Symbol("_class") -> "form-group col-md-5",
-                    Symbol("class") -> "form-control",
-                    Symbol("_showConstraints") -> false,
-                    Symbol("_label") -> "Hochschule/Uni",
-                    Symbol("required") -> "")
-                <div class="form-group col-md-12">
-                    <label>Notenkonto</label>
-                    <div class="input-group mb-3">
-                        <div class="custom-file">
-                            @helper.inputFile(aFormAll("gradeFile"),
-                                Symbol("class") -> "custom-file-input",
-                                Symbol("_showConstraints") -> false,
-                                Symbol("_label") -> "",
-                                Symbol("accept") -> ".pdf",
-                                Symbol("required") -> "")
-                            <label class="custom-file-label">Datei auswählen</label>
+                    <div class="form-row">
+                        @helper.inputText(aFormAll("matrNr"),
+                        Symbol("_class") -> "form-group col-md-2",
+                        Symbol("class") -> "form-control",
+                        Symbol("_showConstraints") -> false,
+                        Symbol("_label") -> "Matrikelnummer",
+                        Symbol("placeholder") -> "Matrikelnr.",
+                        Symbol("type") -> "number",
+                        Symbol("min") -> "100000",
+                        Symbol("max") -> "999999",
+                        Symbol("required") -> "")
+                        @helper.inputText(aFormAll("email"),
+                        Symbol("_class") -> "form-group col-md-5",
+                        Symbol("class") -> "form-control",
+                        Symbol("_showConstraints") -> false,
+                        Symbol("type") -> "email",
+                        Symbol("_label") -> "Email",
+                        Symbol("placeholder") -> "Email",
+                        Symbol("required") -> "")
+                        @helper.select(aFormAll("university"), Seq(("Hochschule Flensburg", "Hochschule Flensburg")),
+                        Symbol("_class") -> "form-group col-md-5",
+                        Symbol("class") -> "form-control",
+                        Symbol("_showConstraints") -> false,
+                        Symbol("_label") -> "Hochschule/Uni",
+                        Symbol("required") -> "")
+                    </div>
+                    <div class="form-row">
+                        @helper.inputText(aFormAll("currentPO"),
+                        Symbol("_class") -> "form-group col-md-2",
+                        Symbol("class") -> "form-control",
+                        Symbol("_showConstraints") -> false,
+                        Symbol("_label") -> "Aktuelle PO",
+                        Symbol("placeholder") -> "Aktuelle PO",
+                        Symbol("type") -> "number",
+                        Symbol("min") -> "2009",
+                        Symbol("max") -> "2020",
+                        Symbol("required") -> "")
+                        @helper.inputText(aFormAll("newPO"),
+                        Symbol("_class") -> "form-group col-md-2",
+                        Symbol("class") -> "form-control",
+                        Symbol("_showConstraints") -> false,
+                        Symbol("_label") -> "Neue PO",
+                        Symbol("placeholder") -> "Neue PO",
+                        Symbol("type") -> "number",
+                        Symbol("min") -> "2009",
+                        Symbol("max") -> "2020",
+                        Symbol("required") -> "")
+                        <div class="form-group col-md-8">
+                            <label>Notenkonto</label>
+                            <div class="input-group mb-3">
+                                <div class="custom-file">
+                                    @helper.inputFile(aFormAll("gradeFile"),
+                                    Symbol("class") -> "custom-file-input",
+                                    Symbol("_showConstraints") -> false,
+                                    Symbol("_label") -> "",
+                                    Symbol("accept") -> ".pdf",
+                                    Symbol("required") -> "")
+                                    <label class="custom-file-label">Datei auswählen</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <button type="submit" class="btn btn-primary">Antrag absenden</button>
+                    <button type="submit" class="btn btn-primary">Antrag absenden</button>
         }
     </div>
 </div>

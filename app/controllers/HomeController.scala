@@ -258,6 +258,11 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     }
   }
 
+  // GET: AdminPanel courses
+  def adminPanelCourses: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    Ok(views.html.main("Admin Panel", views.html.adminPanelCourses()))
+  }
+
   // GET: Admin panel details
   def adminPanelDetails(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (checkLogin(request)) {

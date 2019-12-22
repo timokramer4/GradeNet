@@ -15,6 +15,7 @@ POST    /login                              controllers.HomeController.login
 GET     /logout                              controllers.HomeController.logout
 
 GET     /admin                              controllers.HomeController.adminPanel
+GET     /admin/courses                      controllers.HomeController.adminPanelCourses
 GET     /admin/$id<[0-9]+>                  controllers.HomeController.adminPanelDetails(id: Int)
 POST    /admin/$id<[0-9]+>                  controllers.HomeController.adminPanelDetailsChangeState(id: Int)
 GET     /download/$id<[0-9]+>/:fileName     controllers.HomeController.downloadFile(id: Int, fileName: String)

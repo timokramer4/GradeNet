@@ -1,7 +1,6 @@
-@import java.io.File
-@import controllers.Forms.CourseForm._
 @import models.Course._
-@(id: Int, filledForm: Form[Data])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, flash: Flash)
+@import controllers.Forms.CourseForm._
+@(id: Int, filledForm: Form[Data], courseModuleList: List[Module])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, flash: Flash)
 
 <div class="row">
     <div class="col-lg-12">
@@ -13,7 +12,7 @@
                 </a>
             </div>
             <h1 class="mr-3">@filledForm.data.get("name")
-                - @getGraduation(filledForm.data.get("graduation").getOrElse("-1"))</h1>
+                - @Course.getGraduation(filledForm.data.get("graduation").getOrElse("-1"))</h1>
         </div>
 
         <br>
@@ -35,7 +34,7 @@
             </div>
         }
 
-        <h3>"@filledForm.data.get("name") - @getGraduation(filledForm.data.get("graduation").getOrElse("-1"))" bearbeiten</h3>
+        <h3>"@filledForm.data.get("name") - @Course.getGraduation(filledForm.data.get("graduation").getOrElse("-1"))" bearbeiten</h3>
         @helper.form(action = routes.HomeController.adminPanelSingleCoursePost(id), Symbol("enctype") -> "multipart/form-data") {
             @helper.CSRF.formField
             <div class="form-row">
@@ -88,22 +87,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @*
-                    @for(course
-                    <
-                    - courseList)
-                    {<tr>
-                    <th class="align-middle" id="id" scope="row">@getString(course, "id")</th>
-                    <td class="align-middle">@getString(course, "name")</td>
-                    <td class="align-middle">@getGraduation(course)</td>
-                    <td class="align-middle">@getString(course, "semester")</td>
-                    <td class="align-middle">
-                    <button type="button" id="removeCourse" data-href="@routes.HomeController.adminPanelCoursesRemove(getId(course))" class="btn btn-danger float-right clickable">
-                    <i class="fas fa-trash" aria-hidden="true"></i>
-                    </button>
-                    </td>
-                    </tr>}
-                    *@
+                @for(module <- courseModuleList) {
+                    <tr>
+                        <th class="align-middle" id="id" scope="row">@Module.getString(module, "id")</th>
+                        <td class="align-middle">@Module.getString(module, "name")</td>
+                        <td class="align-middle">@Module.getString(module, "semester")</td>
+                        <td class="align-middle">
+                            <button type="button" id="removeCourse" data-href="@routes.HomeController.adminPanelSingleModuleRemove(Module.getId(module))" class="btn btn-danger float-right clickable">
+                                <i class="fas fa-trash" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
                 </tbody>
             </table>
         </div>

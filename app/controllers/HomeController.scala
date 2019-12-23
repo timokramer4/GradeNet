@@ -40,7 +40,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def appreciationSingle(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     val uniList: List[(String, String)] = jsonConverter(Json.parse(r.text)) // [{}, {}]
-    val moduleList: List[(String, String)] = dbController.getModules().map(module => (module.id.toString, module.name))
+    val moduleList: List[(String, String)] = dbController.getModules(0).map(module => (module.id.toString, module.name))
     val courseList: List[(String, String)] = dbController.getAllCourses().map(course => (course.id.toString, s"${course.name} - ${Course.getGraduation(course)}"))
     Ok(views.html.main("Antrag", views.html.appreciationSingle(aFormSingle, uniList, moduleList, courseList)))
   }
@@ -333,7 +333,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Der Studiengang mit der ID "${id}" wurde erfolgreich entfernt!""")
     } else {
       // Redirect and show success alert after successfully transfer all form data
-      Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Der Studiengang mit der ID "${id}" wurde erfolgreich entfernt!""")
+      Redirect(routes.HomeController.adminPanelCourses()).flashing("error" -> s"""Der Studiengang mit der ID "${id}" konnte nicht entfernt werden!""")
     }
   }
 
@@ -341,7 +341,8 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     if (checkLogin(request)) {
       val course: Course = dbController.getSingleCourse(id)
       val filledForm = courseForm.fill(CourseForm.Data(course.name, course.graduation, course.semester))
-      Ok(views.html.main("Admin Panel", views.html.adminPanelSingleCourse(id, filledForm)))
+      val courseModuleList = dbController.getModules(id)
+      Ok(views.html.main("Admin Panel", views.html.adminPanelSingleCourse(id, filledForm, courseModuleList)))
     } else {
       Redirect(routes.HomeController.loginPage())
     }
@@ -364,6 +365,17 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       )
     } else {
       Redirect(routes.HomeController.loginPage())
+    }
+  }
+
+  def adminPanelSingleModuleRemove(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    // Create new appreciation in database
+    if (dbController.removeModule(id) > 0) {
+      // Redirect and show success alert after successfully transfer all form data
+      Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Das Modul mit der ID "${id}" wurde erfolgreich entfernt!""")
+    } else {
+      // Redirect and show success alert after successfully transfer all form data
+      Redirect(routes.HomeController.adminPanelCourses()).flashing("error" -> s"""Das Modul mit der ID "${id}" konnte nicht entfernt werden!""")
     }
   }
 

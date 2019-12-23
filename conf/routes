@@ -27,7 +27,7 @@ POST    /admin/courses/$id<[0-9]+>          controllers.HomeController.adminPane
 GET     /admin/courses/$id<[0-9]+>/remove   controllers.HomeController.adminPanelSingleCourseRemove(id: Int)
 
 # AdminPanel: Modules
-
+GET     /admin/module/$id<[0-9]+>/remove    controllers.HomeController.adminPanelSingleModuleRemove(id: Int)
 
 # AdminPanel: Download specific file
 GET     /download/$id<[0-9]+>/:fileName     controllers.HomeController.downloadFile(id: Int, fileName: String)

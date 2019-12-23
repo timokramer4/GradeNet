@@ -88,7 +88,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                id SERIAL PRIMARY KEY,
                name VARCHAR NOT NULL,
                semester INT NOT NULL,
-               course_id SERIAL REFERENCES ${appreciationEntity}(id)
+               course_id SERIAL REFERENCES ${coursesEntity}(id)
                );""").execute()
           success = SQL(
             s"""CREATE TABLE IF NOT EXISTS "${appreciationEntity}_${modulesEntity}" (
@@ -303,7 +303,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   }
 
   // Get all modules from database
-  def getModules(): List[Module] = {
+  def getModules(courseId: Int): List[Module] = {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>
@@ -320,12 +320,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                 SQL(
                   s"""SELECT * FROM ${
                     modulesEntity
-                  }""").as(parser.*)
+                  } WHERE course_id = ${courseId}""").as(parser.*)
               case "org.postgresql.Driver" => // PostgreSQL
                 SQL(
                   s"""SELECT * FROM "${
                     modulesEntity
-                  }"""").as(parser.*)
+                  }" WHERE course_id = ${courseId}""").as(parser.*)
             }
           }
           catch {
@@ -337,6 +337,27 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
         }
 
         return result
+    }
+  }
+
+  def removeModule(id: Int): Long = {
+    checkDBIntegrity()
+    db.withConnection { implicit c =>
+      var amountDelete: Int = 0
+      ConfigFactory.load().getString("db.default.driver") match {
+        case "com.mysql.jdbc.Driver" => // MySQL
+          amountDelete = SQL(
+            s"""DELETE FROM ${appreciationEntity} WHERE module_id = ${id};
+               |DELETE FROM ${modulesEntity} WHERE id = ${id};
+               |""".stripMargin).executeUpdate()
+        case "org.postgresql.Driver" => // PostgreSQL
+          amountDelete = SQL(
+            s"""DELETE FROM "${appreciationModulesEntity}" WHERE module_id = ${id};
+               |DELETE FROM "${modulesEntity}" WHERE id = ${id};
+               |""".stripMargin).executeUpdate()
+          removeAppreciation(id, false)
+      }
+      return amountDelete
     }
   }
 
@@ -430,9 +451,9 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       ConfigFactory.load().getString("db.default.driver") match {
         case "com.mysql.jdbc.Driver" => // MySQL
           amountDelete = SQL(
-            s"""DELETE FROM ${coursesEntity} WHERE id = ${id};
-               |DELETE FROM ${appreciationEntity} WHERE course_id = ${id};
+            s"""DELETE FROM ${appreciationEntity} WHERE course_id = ${id};
                |DELETE FROM ${modulesEntity} WHERE course_id = ${id};
+               |DELETE FROM ${coursesEntity} WHERE id = ${id};
                |""".stripMargin).executeUpdate()
         case "org.postgresql.Driver" => // PostgreSQL
           amountDelete = SQL(

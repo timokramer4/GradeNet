@@ -1,8 +1,7 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
-# ~~~~
 
-# An example controller showing a sample home page
+# General
 GET     /                                   controllers.HomeController.home
 GET     /appreciationSingle                 controllers.HomeController.appreciationSingle
 POST    /appreciationSingle                 controllers.HomeController.appreciationSinglePost
@@ -10,15 +9,23 @@ GET     /appreciationAll                    controllers.HomeController.appreciat
 POST    /appreciationAll                    controllers.HomeController.appreciationAllPost
 GET     /state/:id                          controllers.HomeController.showCurrentState(id: Int)
 
+# Login and logout
 GET     /login                              controllers.HomeController.loginPage
 POST    /login                              controllers.HomeController.login
 GET     /logout                              controllers.HomeController.logout
 
+# AdminPanel: Appreciations
 GET     /admin                              controllers.HomeController.adminPanel
-GET     /admin/courses                      controllers.HomeController.adminPanelCourses
 GET     /admin/$id<[0-9]+>                  controllers.HomeController.adminPanelDetails(id: Int)
 POST    /admin/$id<[0-9]+>                  controllers.HomeController.adminPanelDetailsChangeState(id: Int)
+
+# AdminPanel: Courses
+GET     /admin/courses                      controllers.HomeController.adminPanelCourses
+POST    /admin/courses                      controllers.HomeController.adminPanelCoursesPost
+GET     /admin/courses/$id<[0-9]+>/remove   controllers.HomeController.adminPanelCoursesRemove(id: Int)
+
+# AdminPanel: Download specific file
 GET     /download/$id<[0-9]+>/:fileName     controllers.HomeController.downloadFile(id: Int, fileName: String)
 
-# Map static resources from the /public folder to the /assets URL path
+# Static ressources
 GET     /assets/*file                       controllers.Assets.versioned(file)

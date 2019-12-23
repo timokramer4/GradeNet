@@ -2,15 +2,19 @@ package controllers
 
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
+
 import controllers.Forms.AppreciationForm._
 import controllers.Forms.StateForm._
+import controllers.Forms.CourseForm._
 import controllers.Forms.LoginForm._
 import javax.inject._
 import models.State._
-import models.{Appreciation, Module, State, User}
+import models.{Appreciation, Course, Module, User}
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, _}
 import controllers.Hasher.generateHash
+import play.twirl.api.Html
+
 import scala.concurrent.ExecutionContext
 import scala.reflect.io.Directory
 
@@ -258,10 +262,6 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     }
   }
 
-  // GET: AdminPanel courses
-  def adminPanelCourses: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    Ok(views.html.main("Admin Panel", views.html.adminPanelCourses()))
-  }
 
   // GET: Admin panel details
   def adminPanelDetails(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
@@ -294,6 +294,44 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     } else {
       Redirect(routes.HomeController.loginPage())
     }
+  }
+
+  // GET: AdminPanel courses
+  def adminPanelCourses: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    if (checkLogin(request)) {
+      val coursesList: List[Course] = dbController.getAllCourses()
+      Ok(views.html.main("Admin Panel", views.html.adminPanelCourses(coursesList)))
+    } else {
+      Redirect(routes.HomeController.loginPage())
+    }
+  }
+
+  // POST: Create new posts
+  def adminPanelCoursesPost = Action(parse.multipartFormData) { implicit request =>
+    courseForm.bindFromRequest.fold(
+      errorForm => {
+        Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
+        //        BadRequest(views.html.appreciationAll(errorForm))
+      },
+      successForm => {
+        // Create new appreciation in database
+        dbController.createCourse(successForm.name, successForm.gradiation, successForm.semester)
+
+        // Redirect and show success alert after successfully transfer all form data
+        Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Der Studiengang "${successForm.name}" wurde erfolgreich angelegt!""")
+      }
+    )
+  }
+
+  def adminPanelCoursesRemove(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+        // Create new appreciation in database
+        if(dbController.removeCourse(id) > 0){
+          // Redirect and show success alert after successfully transfer all form data
+          Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Der Studiengang mit der ID "${id}" wurde erfolgreich entfernt!""")
+        } else {
+          // Redirect and show success alert after successfully transfer all form data
+          Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Der Studiengang mit der ID "${id}" wurde erfolgreich entfernt!""")
+        }
   }
 
   // GET: Download a specific file

@@ -25,34 +25,36 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     db.withConnection { implicit c =>
       ConfigFactory.load().getString("db.default.driver") match {
         case "com.mysql.jdbc.Driver" => // MySQL
-          var success: Boolean =
-            SQL(
-              s"""CREATE TABLE IF NOT EXISTS ${appreciationEntity} (
+          var success: Boolean = SQL(
+            s"""CREATE TABLE IF NOT EXISTS "${coursesEntity}" (
+               id SERIAL PRIMARY KEY,
+               name VARCHAR(255) NOT NULL,
+               gradiation INT NOT NULL,
+               semester INT NOT NULL
+               );""").execute()
+          success = SQL(
+            s"""CREATE TABLE IF NOT EXISTS ${appreciationEntity} (
               id SERIAL PRIMARY KEY,
               firstName VARCHAR(255) NOT NULL,
               lastName VARCHAR(255) NOT NULL,
               email VARCHAR(255) NOT NULL,
               matrNr INT(11) NOT NULL,
               university VARCHAR(255) NOT NULL,
-              state INT(11) NOT NULL
+              state INT(11) NOT NULL,
+              course_id SERIAL REFERENCES ${coursesEntity}(id)
               );""").execute()
           success = SQL(
             s"""CREATE TABLE IF NOT EXISTS ${modulesEntity} (
                id SERIAL PRIMARY KEY AUTO_INCREMENT,
-               name VARCHAR NOT NULL
+               name VARCHAR NOT NULL,
+               semester INT(11) NOT NULL,
+               course_id SERIAL REFERENCES ${coursesEntity}(id)
                );""").execute()
           success = SQL(
             s"""CREATE TABLE IF NOT EXISTS "${appreciationModulesEntity}" (
                appreciation_id SERIAL REFERENCES ${appreciationEntity}(id),
                module_id SERIAL REFERENCES ${modulesEntity}(id)
                );""").execute()
-          success = SQL(
-            s"""CREATE TABLE IF NOT EXISTS "${coursesEntity}" (
-               id SERIAL PRIMARY KEY,
-               name VARCHAR(255) NOT NULL,
-               gradiation INT NOT NULL,
-               semester INT NOT NULL
-               );""".stripMargin).execute()
           success =
             SQL(
               s"""CREATE TABLE IF NOT EXISTS ${userEntity} (
@@ -63,34 +65,36 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
           success = SQL(
             s"""INSERT INTO ${userEntity} (username, password, admin) VALUES ("admin", "52edc26fb9842cb6a77de4c2f27709d8a3d812545a5852ba9dbef35d10a7a5c5", 1) ON DUPLICATE KEY UPDATE username=username;""").execute()
         case "org.postgresql.Driver" => // PostgreSQL
-          var success: Boolean =
-            SQL(
-              s"""CREATE TABLE IF NOT EXISTS "${appreciationEntity}" (
+          var success: Boolean = SQL(
+            s"""CREATE TABLE IF NOT EXISTS "${coursesEntity}" (
+               id SERIAL PRIMARY KEY,
+               name VARCHAR NOT NULL,
+               gradiation INT NOT NULL,
+               semester INT NOT NULL
+               );""").execute()
+          success = SQL(
+            s"""CREATE TABLE IF NOT EXISTS "${appreciationEntity}" (
               id SERIAL PRIMARY KEY,
               firstName VARCHAR NOT NULL,
               lastName VARCHAR NOT NULL,
               email VARCHAR NOT NULL,
               matrNr INT NOT NULL,
               university VARCHAR NOT NULL,
-              state INT NOT NULL
+              state INT NOT NULL,
+              course_id SERIAL REFERENCES ${coursesEntity}(id)
               );""").execute()
           success = SQL(
             s"""CREATE TABLE IF NOT EXISTS "${modulesEntity}" (
                id SERIAL PRIMARY KEY,
-               name VARCHAR NOT NULL
+               name VARCHAR NOT NULL,
+               semester INT NOT NULL,
+               course_id SERIAL REFERENCES ${appreciationEntity}(id)
                );""").execute()
           success = SQL(
             s"""CREATE TABLE IF NOT EXISTS "${appreciationEntity}_${modulesEntity}" (
                appreciation_id SERIAL REFERENCES ${appreciationEntity}(id),
                module_id SERIAL REFERENCES ${modulesEntity}(id)
                );""").execute()
-          success = SQL(
-            s"""CREATE TABLE IF NOT EXISTS "${coursesEntity}" (
-               id SERIAL PRIMARY KEY,
-               name VARCHAR NOT NULL,
-               gradiation INT NOT NULL,
-               semester INT NOT NULL
-               );""".stripMargin).execute()
           success =
             SQL(
               s"""CREATE TABLE IF NOT EXISTS "${userEntity}" (
@@ -105,18 +109,18 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   }
 
   // Create new appreciation in database
-  def createAppreciation(firstName: String, lastName: String, email: String, matrNr: Int, university: String): Long = {
+  def createAppreciation(firstName: String, lastName: String, email: String, matrNr: Int, university: String, course: Int): Long = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       var id: Option[Long] = Some(0)
       ConfigFactory.load().getString("db.default.driver") match {
         case "com.mysql.jdbc.Driver" => // MySQL
-          id = SQL(s"""INSERT INTO ${appreciationEntity} (firstName, lastName, email, matrNr, university, state) values ({firstName}, {lastName}, {email}, {matrNr}, {university}, 0)""")
-            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university)
+          id = SQL(s"""INSERT INTO ${appreciationEntity} (firstName, lastName, email, matrNr, university, course_id, state) values ({firstName}, {lastName}, {email}, {matrNr}, {university}, {course}, 0)""")
+            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "course" -> course)
             .executeInsert()
         case "org.postgresql.Driver" => // PostgreSQL
-          id = SQL(s"""INSERT INTO "${appreciationEntity}" (firstName, lastName, email, matrNr, university, state) values ({firstName}, {lastName}, {email}, {matrNr}, {university}, 0)""")
-            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university)
+          id = SQL(s"""INSERT INTO "${appreciationEntity}" (firstName, lastName, email, matrNr, university, course_id, state) values ({firstName}, {lastName}, {email}, {matrNr}, {university}, {course}, 0)""")
+            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "course" -> course)
             .executeInsert()
       }
       return id.getOrElse(0)
@@ -137,23 +141,6 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
             .executeUpdate()
       }
       return amountUpdated
-    }
-  }
-
-  // Append module to created appreciation
-  def appendModuleToAppreciation(aId: Long, mId: Int): Long = {
-    checkDBIntegrity()
-    db.withConnection { implicit c =>
-      var id: Option[Long] = Some(0)
-      ConfigFactory.load().getString("db.default.driver") match {
-        case "com.mysql.jdbc.Driver" => // MySQL
-          id = SQL(s"""INSERT INTO ${appreciationModulesEntity} (appreciation_id, module_id) values (${aId}, ${mId})""")
-            .executeInsert()
-        case "org.postgresql.Driver" => // PostgreSQL
-          id = SQL(s"""INSERT INTO "${appreciationModulesEntity}" (appreciation_id, module_id) values (${aId}, ${mId})""")
-            .executeInsert()
-      }
-      return id.getOrElse(0)
     }
   }
 
@@ -199,8 +186,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val parser: RowParser[Appreciation] =
-        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("state") map {
-          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => Appreciation(id, fn, ln, mnr, email, uni, switchStateInt(state).asInstanceOf[State])
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("course_id") ~ int("state") map {
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ course ~ state => Appreciation(id, fn, ln, mnr, email, uni, course, switchStateInt(state).asInstanceOf[State])
         }
 
       val result: List[Appreciation] = {
@@ -220,8 +207,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val parser: RowParser[Appreciation] = {
-        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("state") map {
-          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ state => Appreciation(id, fn, ln, mnr, email, uni, switchStateInt(state).asInstanceOf[State])
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("course_id") ~ int("state") map {
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ course ~ state => Appreciation(id, fn, ln, mnr, email, uni, course, switchStateInt(state).asInstanceOf[State])
         }
       }
 
@@ -237,14 +224,31 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     }
   }
 
+  // Append module to created appreciation
+  def appendModuleToAppreciation(aId: Long, mId: Int): Long = {
+    checkDBIntegrity()
+    db.withConnection { implicit c =>
+      var id: Option[Long] = Some(0)
+      ConfigFactory.load().getString("db.default.driver") match {
+        case "com.mysql.jdbc.Driver" => // MySQL
+          id = SQL(s"""INSERT INTO ${appreciationModulesEntity} (appreciation_id, module_id) values (${aId}, ${mId})""")
+            .executeInsert()
+        case "org.postgresql.Driver" => // PostgreSQL
+          id = SQL(s"""INSERT INTO "${appreciationModulesEntity}" (appreciation_id, module_id) values (${aId}, ${mId})""")
+            .executeInsert()
+      }
+      return id.getOrElse(0)
+    }
+  }
+
   // Get selected modules in appreciation
   def getModulesFromAppreciation(id: Int): List[Module] = {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>
         val parser: RowParser[Module] = {
-          int("id") ~ str("name") map {
-            case id ~ name => Module(id, name)
+          int("id") ~ str("name") ~ int("semester") ~ int("course_id") map {
+            case id ~ name ~ semester ~ course => Module(id, name, semester, course)
           }
         }
 
@@ -252,11 +256,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
           ConfigFactory.load().getString("db.default.driver") match {
             case "com.mysql.jdbc.Driver" => // MySQL
               SQL(
-                s"""SELECT ${
-                  modulesEntity
-                }.id, ${
-                  modulesEntity
-                }.name from ${
+                s"""SELECT * from ${
                   appreciationEntity
                 } JOIN ${
                   appreciationModulesEntity
@@ -277,11 +277,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                 }""").as(parser.*)
             case "org.postgresql.Driver" => // PostgreSQL
               SQL(
-                s"""SELECT ${
-                  modulesEntity
-                }.id, ${
-                  modulesEntity
-                }.name from "${
+                s"""SELECT * from "${
                   appreciationEntity
                 }" JOIN "${
                   appreciationModulesEntity
@@ -312,8 +308,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     db.withConnection {
       implicit c =>
         val parser: RowParser[Module] = {
-          int("id") ~ str("name") map {
-            case id ~ name => Module(id, name)
+          int("id") ~ str("name") ~ int("semester") ~ int("course_id") map {
+            case id ~ name ~ semester ~ course => Module(id, name, semester, course)
           }
         }
 
@@ -335,7 +331,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
           catch {
             case e: Exception => {
               println(s"""Es konnten keine Module gefunden werden!""")
-              List(Module(0, ""))
+              List()
             }
           }
         }
@@ -350,8 +346,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     db.withConnection {
       implicit c =>
         val parser: RowParser[Module] = {
-          int("id") ~ str("name") map {
-            case id ~ name => Module(id, name)
+          int("id") ~ str("name") ~ int("semester") ~ int("course_id") map {
+            case id ~ name ~ semester ~ course => Module(id, name, semester, course)
           }
         }
 
@@ -384,7 +380,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
         catch {
           case e: Exception => {
             println(s"""Es konnten keine Module gefunden werden!""")
-            List(Module(0, ""))
+            List()
           }
         }
         return moduleList
@@ -410,13 +406,35 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     }
   }
 
+  // Edit course
+  def editCourse(course: Course): Int = {
+    checkDBIntegrity()
+    db.withConnection { implicit c =>
+      var amountEdited: Int = 0
+      ConfigFactory.load().getString("db.default.driver") match {
+        case "com.mysql.jdbc.Driver" => // MySQL
+          amountEdited = SQL(s"""DELETE FROM ${coursesEntity} WHERE id = ${course.id};""").executeUpdate()
+        case "org.postgresql.Driver" => // PostgreSQL
+          amountEdited = SQL(
+            s"""UPDATE "${coursesEntity}" SET name = '${course.name}', gradiation = ${course.graduation}, semester = ${course.semester} WHERE id = ${course.id};""").executeUpdate()
+      }
+      return amountEdited
+    }
+  }
+
+  // Remove course
   def removeCourse(id: Int): Int = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
-      val amountDelete: Int =
-        SQL(
-          s"""DELETE FROM "${coursesEntity}" WHERE id = ${id}""")
-          .executeUpdate()
+      var amountDelete: Int = 0
+      ConfigFactory.load().getString("db.default.driver") match {
+        case "com.mysql.jdbc.Driver" => // MySQL
+          amountDelete = SQL(s"""DELETE FROM ${coursesEntity} WHERE id = ${id};""").executeUpdate()
+          removeAppreciation(id, false)
+        case "org.postgresql.Driver" => // PostgreSQL
+          amountDelete = SQL(s"""DELETE FROM "${coursesEntity}" WHERE id = ${id};""").executeUpdate()
+          removeAppreciation(id, false)
+      }
       return amountDelete
     }
   }
@@ -439,22 +457,51 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                 SQL(
                   s"""SELECT * FROM ${
                     coursesEntity
-                  }""").as(parser.*)
+                  } ORDER BY name ASC;""").as(parser.*)
               case "org.postgresql.Driver" => // PostgreSQL
                 SQL(
                   s"""SELECT * FROM "${
                     coursesEntity
-                  }"""").as(parser.*)
+                  }" ORDER BY name ASC;""").as(parser.*)
             }
           }
           catch {
             case e: Exception => {
               println(s"""Es konnten keine Studiengänge gefunden werden!""")
-              List(Course(0, "", 0, 0))
+              List()
             }
           }
         }
 
+        return result
+    }
+  }
+
+  // Get single course from database
+  def getSingleCourse(id: Int): Course = {
+    checkDBIntegrity()
+    db.withConnection {
+      implicit c =>
+        val parser: RowParser[Course] = {
+          int("id") ~ str("name") ~ int("gradiation") ~ int("semester") map {
+            case id ~ name ~ gradiation ~ semester => Course(id, name, gradiation, semester)
+          }
+        }
+
+        val result: Course = {
+          ConfigFactory.load().getString("db.default.driver") match {
+            case "com.mysql.jdbc.Driver" => // MySQL
+              SQL(
+                s"""SELECT * FROM ${
+                  coursesEntity
+                } WHERE id = ${id};""").as(parser.single)
+            case "org.postgresql.Driver" => // PostgreSQL
+              SQL(
+                s"""SELECT * FROM "${
+                  coursesEntity
+                }" WHERE id = ${id};""").as(parser.single)
+          }
+        }
         return result
     }
   }

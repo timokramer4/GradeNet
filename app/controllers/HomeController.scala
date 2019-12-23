@@ -6,6 +6,7 @@ import java.nio.file.{Files, Path, Paths}
 import controllers.Forms.AppreciationForm._
 import controllers.Forms.StateForm._
 import controllers.Forms.CourseForm._
+import controllers.Forms.CourseForm
 import controllers.Forms.LoginForm._
 import javax.inject._
 import models.State._
@@ -40,7 +41,8 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     val uniList: List[(String, String)] = jsonConverter(Json.parse(r.text)) // [{}, {}]
     val moduleList: List[(String, String)] = dbController.getModules().map(module => (module.id.toString, module.name))
-    Ok(views.html.main("Antrag", views.html.appreciationSingle(aFormSingle, uniList, moduleList)))
+    val courseList: List[(String, String)] = dbController.getAllCourses().map(course => (course.id.toString, s"${course.name} - ${Course.getGraduation(course)}"))
+    Ok(views.html.main("Antrag", views.html.appreciationSingle(aFormSingle, uniList, moduleList, courseList)))
   }
 
   // POST: Form appreciation single grades
@@ -80,7 +82,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
                   }
 
                   // Create new appreciation in database
-                  petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university)
+                  petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, successForm.course)
 
                   // Remove existing directory recursive
                   if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
@@ -155,7 +157,8 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def appreciationAll(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     val uniList: List[(String, String)] = jsonConverter(Json.parse(r.text))
-    Ok(views.html.main("Antrag", views.html.appreciationAll(aFormAll, uniList)))
+    val courseList: List[(String, String)] = dbController.getAllCourses().map(course => (course.id.toString, s"${course.name} - ${Course.getGraduation(course)}"))
+    Ok(views.html.main("Antrag", views.html.appreciationAll(aFormAll, uniList, courseList)))
   }
 
   // POST: Form appreciation all grades
@@ -181,7 +184,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
               }
 
               // Create new appreciation in database
-              petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university)
+              petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, successForm.course)
 
               // Remove existing directory recursive
               if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
@@ -324,14 +327,44 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   }
 
   def adminPanelCoursesRemove(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-        // Create new appreciation in database
-        if(dbController.removeCourse(id) > 0){
+    // Create new appreciation in database
+    if (dbController.removeCourse(id) > 0) {
+      // Redirect and show success alert after successfully transfer all form data
+      Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Der Studiengang mit der ID "${id}" wurde erfolgreich entfernt!""")
+    } else {
+      // Redirect and show success alert after successfully transfer all form data
+      Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Der Studiengang mit der ID "${id}" wurde erfolgreich entfernt!""")
+    }
+  }
+
+  def adminPanelSingleCourse(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    if (checkLogin(request)) {
+      val course: Course = dbController.getSingleCourse(id)
+      val filledForm = courseForm.fill(CourseForm.Data(course.name, course.graduation, course.semester))
+      Ok(views.html.main("Admin Panel", views.html.adminPanelSingleCourse(id, filledForm)))
+    } else {
+      Redirect(routes.HomeController.loginPage())
+    }
+  }
+
+  def adminPanelSingleCoursePost(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    if (checkLogin(request)) {
+      courseForm.bindFromRequest.fold(
+        errorForm => {
+          println(errorForm.errors)
+          Redirect(routes.HomeController.adminPanelSingleCourse(id)).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
+        },
+        successForm => {
+          // Create new appreciation in database
+          dbController.editCourse(Course(id, successForm.name, successForm.gradiation, successForm.semester))
+
           // Redirect and show success alert after successfully transfer all form data
-          Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Der Studiengang mit der ID "${id}" wurde erfolgreich entfernt!""")
-        } else {
-          // Redirect and show success alert after successfully transfer all form data
-          Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Der Studiengang mit der ID "${id}" wurde erfolgreich entfernt!""")
+          Redirect(routes.HomeController.adminPanelSingleCourse(id)).flashing("success" -> s"""Der Studiengang "${successForm.name}" wurde erfolgreich aktualisiert!""")
         }
+      )
+    } else {
+      Redirect(routes.HomeController.loginPage())
+    }
   }
 
   // GET: Download a specific file

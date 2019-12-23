@@ -102,27 +102,10 @@
         @content
         </div>
 
-        <script>
-                // Data tables
-                $(document).ready(function () {
-                    $('.dataTable').DataTable();
-                });
+            <!-- Custom JS -->
+        <script src="/assets/javascripts/custom.js"></script>
 
-                // Show current selected file
-                $('body').on('change', '.custom-file-input', function () {
-                    console.log("Change");
-
-                    // Get filename
-                    var fileName = $(this).val().replace(/^.*[\\\/]/, '');
-
-                    // Replace default string
-                    if (fileName == "") {
-                        $(this).parent().parent().next('.custom-file-label')[0].innerText = "Datei auswählen";
-                    } else {
-                        $(this).parent().parent().next('.custom-file-label')[0].innerText = fileName;
-                    }
-                });
-        </script>
+            <!-- Bootstrap JS -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 

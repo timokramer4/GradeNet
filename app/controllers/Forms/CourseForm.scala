@@ -14,7 +14,7 @@ object CourseForm {
   val courseForm = Form(
     mapping(
       "name" -> nonEmptyText,
-      "gradiation" -> number(min = 0, max = 1),
+      "graduation" -> number(min = 0, max = 1),
       "semester" -> number(min = 3, max = 7)
     )(Data.apply)(Data.unapply)
   )

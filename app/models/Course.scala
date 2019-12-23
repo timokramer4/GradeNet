@@ -16,10 +16,24 @@ object Course {
   def getId(course: Course): Int =
     course.id
 
-  def getGraduation(course: Course): String = {
-    course.graduation match {
-      case 0 => "Bachelor"
-      case 1 => "Master"
+  def getGraduation(course: Any): String = {
+    course match {
+      case c: Course => {
+        c.graduation match {
+          case 0 => "Bachelor"
+          case 1 => "Master"
+          case _ => "n.A."
+        }
+      }
+      case i: String => {
+        i match {
+          case "0" => "Bachelor"
+          case "1" => "Master"
+          case _ => "n.A."
+        }
+      }
+      case _ => throw new IllegalArgumentException("Falscher Datentyp!")
     }
+
   }
 }

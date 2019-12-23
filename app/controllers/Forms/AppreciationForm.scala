@@ -10,6 +10,7 @@ object AppreciationForm {
                   lastName: String,
                   email: String,
                   matrNr: Int,
+                  course: Int,
                   university: String
                 )
 
@@ -19,6 +20,7 @@ object AppreciationForm {
                      email: String,
                      matrNr: Int,
                      university: String,
+                     course: Int,
                      modules: List[Int]
                    )
 
@@ -29,6 +31,7 @@ object AppreciationForm {
       "email" -> email,
       "matrNr" -> number(min = 100000, max = 999999),
       "university" -> nonEmptyText,
+      "course" -> number,
       "modules" -> list(number)
     )(Single.apply)(Single.unapply)
   )
@@ -39,6 +42,7 @@ object AppreciationForm {
       "lastName" -> nonEmptyText,
       "email" -> email,
       "matrNr" -> number(min = 100000, max = 999999),
+      "course" -> number,
       "university" -> nonEmptyText
     )(All.apply)(All.unapply)
   )

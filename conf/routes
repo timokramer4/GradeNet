@@ -22,7 +22,12 @@ POST    /admin/$id<[0-9]+>                  controllers.HomeController.adminPane
 # AdminPanel: Courses
 GET     /admin/courses                      controllers.HomeController.adminPanelCourses
 POST    /admin/courses                      controllers.HomeController.adminPanelCoursesPost
+GET     /admin/courses/$id<[0-9]+>          controllers.HomeController.adminPanelSingleCourse(id: Int)
+POST    /admin/courses/$id<[0-9]+>          controllers.HomeController.adminPanelSingleCoursePost(id: Int)
 GET     /admin/courses/$id<[0-9]+>/remove   controllers.HomeController.adminPanelCoursesRemove(id: Int)
+
+# AdminPanel: Modules
+
 
 # AdminPanel: Download specific file
 GET     /download/$id<[0-9]+>/:fileName     controllers.HomeController.downloadFile(id: Int, fileName: String)

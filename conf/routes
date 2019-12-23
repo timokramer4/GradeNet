@@ -24,7 +24,7 @@ GET     /admin/courses                      controllers.HomeController.adminPane
 POST    /admin/courses                      controllers.HomeController.adminPanelCoursesPost
 GET     /admin/courses/$id<[0-9]+>          controllers.HomeController.adminPanelSingleCourse(id: Int)
 POST    /admin/courses/$id<[0-9]+>          controllers.HomeController.adminPanelSingleCoursePost(id: Int)
-GET     /admin/courses/$id<[0-9]+>/remove   controllers.HomeController.adminPanelCoursesRemove(id: Int)
+GET     /admin/courses/$id<[0-9]+>/remove   controllers.HomeController.adminPanelSingleCourseRemove(id: Int)
 
 # AdminPanel: Modules
 

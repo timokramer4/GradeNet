@@ -429,10 +429,17 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       var amountDelete: Int = 0
       ConfigFactory.load().getString("db.default.driver") match {
         case "com.mysql.jdbc.Driver" => // MySQL
-          amountDelete = SQL(s"""DELETE FROM ${coursesEntity} WHERE id = ${id};""").executeUpdate()
-          removeAppreciation(id, false)
+          amountDelete = SQL(
+            s"""DELETE FROM ${coursesEntity} WHERE id = ${id};
+               |DELETE FROM ${appreciationEntity} WHERE course_id = ${id};
+               |DELETE FROM ${modulesEntity} WHERE course_id = ${id};
+               |""".stripMargin).executeUpdate()
         case "org.postgresql.Driver" => // PostgreSQL
-          amountDelete = SQL(s"""DELETE FROM "${coursesEntity}" WHERE id = ${id};""").executeUpdate()
+          amountDelete = SQL(
+            s"""DELETE FROM "${appreciationEntity}" WHERE course_id = ${id};
+               |DELETE FROM "${modulesEntity}" WHERE course_id = ${id};
+               |DELETE FROM "${coursesEntity}" WHERE id = ${id};
+               |""".stripMargin).executeUpdate()
           removeAppreciation(id, false)
       }
       return amountDelete

@@ -326,7 +326,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     )
   }
 
-  def adminPanelCoursesRemove(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+  def adminPanelSingleCourseRemove(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     // Create new appreciation in database
     if (dbController.removeCourse(id) > 0) {
       // Redirect and show success alert after successfully transfer all form data

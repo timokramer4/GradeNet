@@ -91,7 +91,7 @@
                         <td class="align-middle">@getGraduation(course)</td>
                         <td class="align-middle">@getString(course, "semester")</td>
                         <td class="align-middle">
-                            <button type="button" id="removeCourse" data-href="@routes.HomeController.adminPanelCoursesRemove(getId(course))" class="btn btn-danger float-right clickable">
+                            <button type="button" id="removeCourse" data-href="@routes.HomeController.adminPanelSingleCourseRemove(getId(course))" class="btn btn-danger float-right clickable">
                                 <i class="fas fa-trash" aria-hidden="true"></i>
                             </button>
                         </td>

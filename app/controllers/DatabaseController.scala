@@ -302,8 +302,100 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     }
   }
 
+  // TODO: Create new module
+  /*def createModule(name: String, semester: Int, course: Int): Long = {
+
+  }*/
+
+  // Edit existing module
+  def editModule(module: Module): Int = {
+    checkDBIntegrity()
+    db.withConnection {
+      implicit c =>
+        var amountEdited: Int = 0
+        ConfigFactory.load().getString("db.default.driver") match {
+          case "com.mysql.jdbc.Driver" => // MySQL
+            amountEdited = SQL(
+              s"""UPDATE ${modulesEntity} SET name = '${module.name}', semester = ${module.semester}, course_id = ${module.course} WHERE id = ${module.id};""").executeUpdate()
+          case "org.postgresql.Driver" => // PostgreSQL
+            amountEdited = SQL(
+              s"""UPDATE "${modulesEntity}" SET name = '${module.name}', semester = ${module.semester}, course_id = ${module.course} WHERE id = ${module.id};""").executeUpdate()
+        }
+        return amountEdited
+    }
+  }
+
+  // Remove specific module
+  def removeModule(id: Int): Long = {
+    checkDBIntegrity()
+    db.withConnection {
+      implicit c =>
+        var amountDelete: Int = 0
+        ConfigFactory.load().getString("db.default.driver") match {
+          case "com.mysql.jdbc.Driver" => // MySQL
+            SQL(
+              s"""DELETE FROM ${
+                appreciationEntity
+              } WHERE module_id = ${
+                id
+              };""").executeUpdate()
+            amountDelete = SQL(
+              s"""DELETE FROM ${
+                modulesEntity
+              } WHERE id = ${
+                id
+              };""").executeUpdate()
+          case "org.postgresql.Driver" => // PostgreSQL
+            SQL(
+              s"""DELETE FROM "${
+                appreciationModulesEntity
+              }" WHERE module_id = ${
+                id
+              };""").executeUpdate()
+            amountDelete = SQL(
+              s"""DELETE FROM "${
+                modulesEntity
+              }" WHERE id = ${
+                id
+              };""").executeUpdate()
+            removeAppreciation(id, false)
+        }
+        return amountDelete
+    }
+  }
+
+  // Get single module
+  def getModule(id: Int): Module = {
+    checkDBIntegrity()
+    db.withConnection {
+      implicit c =>
+        val parser: RowParser[Module] = {
+          int("id") ~ str("name") ~ int("semester") ~ int("course_id") map {
+            case id ~ name ~ semester ~ course => Module(id, name, semester, course)
+          }
+        }
+
+        val result: Module = {
+          ConfigFactory.load().getString("db.default.driver") match {
+            case "com.mysql.jdbc.Driver" => // MySQL
+              SQL(
+                s"""SELECT * FROM ${
+                  modulesEntity
+                } WHERE id = ${id}""").as(parser.single)
+            case "org.postgresql.Driver" => // PostgreSQL
+              SQL(
+                s"""SELECT * FROM "${
+                  modulesEntity
+                }" WHERE id = ${id}""").as(parser.single)
+          }
+        }
+
+        return result
+    }
+  }
+
   // Get all modules from database
-  def getModules(courseId: Int): List[Module] = {
+  def getAllModules(courseId: Int): List[Module] = {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>
@@ -335,29 +427,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
             }
           }
         }
-
         return result
-    }
-  }
-
-  def removeModule(id: Int): Long = {
-    checkDBIntegrity()
-    db.withConnection { implicit c =>
-      var amountDelete: Int = 0
-      ConfigFactory.load().getString("db.default.driver") match {
-        case "com.mysql.jdbc.Driver" => // MySQL
-          amountDelete = SQL(
-            s"""DELETE FROM ${appreciationEntity} WHERE module_id = ${id};
-               |DELETE FROM ${modulesEntity} WHERE id = ${id};
-               |""".stripMargin).executeUpdate()
-        case "org.postgresql.Driver" => // PostgreSQL
-          amountDelete = SQL(
-            s"""DELETE FROM "${appreciationModulesEntity}" WHERE module_id = ${id};
-               |DELETE FROM "${modulesEntity}" WHERE id = ${id};
-               |""".stripMargin).executeUpdate()
-          removeAppreciation(id, false)
-      }
-      return amountDelete
     }
   }
 
@@ -411,59 +481,121 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   // Create new course entry
   def createCourse(name: String, gradiation: Int, semester: Int): Long = {
     checkDBIntegrity()
-    db.withConnection { implicit c =>
-      var id: Option[Long] = Some(0)
-      ConfigFactory.load().getString("db.default.driver") match {
-        case "com.mysql.jdbc.Driver" => // MySQL
-          id = SQL(s"""INSERT INTO ${coursesEntity} (name, gradiation, semester) values ({name}, {gradiation}, {semester})""")
-            .on("name" -> name, "gradiation" -> gradiation, "semester" -> semester)
-            .executeInsert()
-        case "org.postgresql.Driver" => // PostgreSQL
-          id = SQL(s"""INSERT INTO "${coursesEntity}" (name, gradiation, semester) values ({name}, {gradiation}, {semester})""")
-            .on("name" -> name, "gradiation" -> gradiation, "semester" -> semester)
-            .executeInsert()
-      }
-      return id.getOrElse(0)
+    db.withConnection {
+      implicit c =>
+        var id: Option[Long] = Some(0)
+        ConfigFactory.load().getString("db.default.driver") match {
+          case "com.mysql.jdbc.Driver" => // MySQL
+            id = SQL(
+              s"""INSERT INTO ${
+                coursesEntity
+              } (name, gradiation, semester) values ({name}, {gradiation}, {semester})""")
+              .on("name" -> name, "gradiation" -> gradiation, "semester" -> semester)
+              .executeInsert()
+          case "org.postgresql.Driver" => // PostgreSQL
+            id = SQL(
+              s"""INSERT INTO "${
+                coursesEntity
+              }" (name, gradiation, semester) values ({name}, {gradiation}, {semester})""")
+              .on("name" -> name, "gradiation" -> gradiation, "semester" -> semester)
+              .executeInsert()
+        }
+        return id.getOrElse(0)
     }
   }
 
   // Edit course
   def editCourse(course: Course): Int = {
     checkDBIntegrity()
-    db.withConnection { implicit c =>
-      var amountEdited: Int = 0
-      ConfigFactory.load().getString("db.default.driver") match {
-        case "com.mysql.jdbc.Driver" => // MySQL
-          amountEdited = SQL(s"""DELETE FROM ${coursesEntity} WHERE id = ${course.id};""").executeUpdate()
-        case "org.postgresql.Driver" => // PostgreSQL
-          amountEdited = SQL(
-            s"""UPDATE "${coursesEntity}" SET name = '${course.name}', gradiation = ${course.graduation}, semester = ${course.semester} WHERE id = ${course.id};""").executeUpdate()
-      }
-      return amountEdited
+    db.withConnection {
+      implicit c =>
+        var amountEdited: Int = 0
+        ConfigFactory.load().getString("db.default.driver") match {
+          case "com.mysql.jdbc.Driver" => // MySQL
+            amountEdited = SQL(
+              s"""UPDATE ${
+                coursesEntity
+              } SET name = '${
+                course.name
+              }', gradiation = ${
+                course.graduation
+              }, semester = ${
+                course.semester
+              } WHERE id = ${
+                course.id
+              };""").executeUpdate()
+          case "org.postgresql.Driver" => // PostgreSQL
+            amountEdited = SQL(
+              s"""UPDATE "${
+                coursesEntity
+              }" SET name = '${
+                course.name
+              }', gradiation = ${
+                course.graduation
+              }, semester = ${
+                course.semester
+              } WHERE id = ${
+                course.id
+              };""").executeUpdate()
+        }
+        return amountEdited
     }
   }
 
   // Remove course
   def removeCourse(id: Int): Int = {
     checkDBIntegrity()
-    db.withConnection { implicit c =>
-      var amountDelete: Int = 0
-      ConfigFactory.load().getString("db.default.driver") match {
-        case "com.mysql.jdbc.Driver" => // MySQL
-          amountDelete = SQL(
-            s"""DELETE FROM ${appreciationEntity} WHERE course_id = ${id};
-               |DELETE FROM ${modulesEntity} WHERE course_id = ${id};
-               |DELETE FROM ${coursesEntity} WHERE id = ${id};
-               |""".stripMargin).executeUpdate()
-        case "org.postgresql.Driver" => // PostgreSQL
-          amountDelete = SQL(
-            s"""DELETE FROM "${appreciationEntity}" WHERE course_id = ${id};
-               |DELETE FROM "${modulesEntity}" WHERE course_id = ${id};
-               |DELETE FROM "${coursesEntity}" WHERE id = ${id};
-               |""".stripMargin).executeUpdate()
-          removeAppreciation(id, false)
-      }
-      return amountDelete
+    db.withConnection {
+      implicit c =>
+        var amountDelete: Int = 0
+        ConfigFactory.load().getString("db.default.driver") match {
+          case "com.mysql.jdbc.Driver" => // MySQL
+            SQL(
+              s"""DELETE FROM ${appreciationEntity} WHERE course_id = ${id};
+                 DELETE FROM ${modulesEntity} WHERE course_id = ${id};
+                 """).executeUpdate()
+            amountDelete = SQL(s"""DELETE FROM ${coursesEntity} WHERE id = ${id};""").executeUpdate()
+          case "org.postgresql.Driver" => // PostgreSQL
+            SQL(
+              s"""DELETE FROM "${appreciationEntity}" WHERE course_id = ${id};
+                 DELETE FROM "${modulesEntity}" WHERE course_id = ${id};
+                 """).executeUpdate()
+            amountDelete = SQL(s"""DELETE FROM "${coursesEntity}" WHERE id = ${id};""").executeUpdate()
+        }
+        return amountDelete
+    }
+  }
+
+  // Get single course from database
+  def getCourse(id: Int): Course = {
+    checkDBIntegrity()
+    db.withConnection {
+      implicit c =>
+        val parser: RowParser[Course] = {
+          int("id") ~ str("name") ~ int("gradiation") ~ int("semester") map {
+            case id ~ name ~ gradiation ~ semester => Course(id, name, gradiation, semester)
+          }
+        }
+
+        val result: Course = {
+          ConfigFactory.load().getString("db.default.driver") match {
+            case "com.mysql.jdbc.Driver" => // MySQL
+              SQL(
+                s"""SELECT * FROM ${
+                  coursesEntity
+                } WHERE id = ${
+                  id
+                };""").as(parser.single)
+            case "org.postgresql.Driver" => // PostgreSQL
+              SQL(
+                s"""SELECT * FROM "${
+                  coursesEntity
+                }" WHERE id = ${
+                  id
+                };""").as(parser.single)
+          }
+        }
+        return result
     }
   }
 
@@ -498,36 +630,6 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               println(s"""Es konnten keine Studiengänge gefunden werden!""")
               List()
             }
-          }
-        }
-
-        return result
-    }
-  }
-
-  // Get single course from database
-  def getSingleCourse(id: Int): Course = {
-    checkDBIntegrity()
-    db.withConnection {
-      implicit c =>
-        val parser: RowParser[Course] = {
-          int("id") ~ str("name") ~ int("gradiation") ~ int("semester") map {
-            case id ~ name ~ gradiation ~ semester => Course(id, name, gradiation, semester)
-          }
-        }
-
-        val result: Course = {
-          ConfigFactory.load().getString("db.default.driver") match {
-            case "com.mysql.jdbc.Driver" => // MySQL
-              SQL(
-                s"""SELECT * FROM ${
-                  coursesEntity
-                } WHERE id = ${id};""").as(parser.single)
-            case "org.postgresql.Driver" => // PostgreSQL
-              SQL(
-                s"""SELECT * FROM "${
-                  coursesEntity
-                }" WHERE id = ${id};""").as(parser.single)
           }
         }
         return result

@@ -30,7 +30,7 @@
         }
 
         <h3>Neuen Studiengang anlegen</h3>
-        @helper.form(action = routes.HomeController.adminPanelCoursesPost(), Symbol("enctype") -> "multipart/form-data") {
+        @helper.form(action = routes.HomeController.adminPanelCoursesCreate(), Symbol("enctype") -> "multipart/form-data") {
             @helper.CSRF.formField
             <div class="form-row">
                 @helper.inputText(courseForm("name"),
@@ -85,7 +85,7 @@
                 </thead>
                 <tbody>
                 @for(course <- courseList) {
-                    <tr class="clickable" data-href="/admin/courses/@getString(course, "id")">
+                    <tr class="clickable" data-href="@routes.HomeController.adminPanelSingleCourse(getId(course))">
                         <th class="align-middle" id="id" scope="row">@getString(course, "id")</th>
                         <td class="align-middle">@getString(course, "name")</td>
                         <td class="align-middle">@getGraduation(course)</td>

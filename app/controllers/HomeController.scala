@@ -6,7 +6,7 @@ import java.nio.file.{Files, Path, Paths}
 import controllers.Forms.AppreciationForm._
 import controllers.Forms.StateForm._
 import controllers.Forms.CourseForm._
-import controllers.Forms.CourseForm
+import controllers.Forms.ModuleForm._
 import controllers.Forms.LoginForm._
 import javax.inject._
 import models.State._
@@ -14,7 +14,6 @@ import models.{Appreciation, Course, Module, User}
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, _}
 import controllers.Hasher.generateHash
-import play.twirl.api.Html
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.io.Directory
@@ -40,7 +39,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def appreciationSingle(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     val uniList: List[(String, String)] = jsonConverter(Json.parse(r.text)) // [{}, {}]
-    val moduleList: List[(String, String)] = dbController.getModules(0).map(module => (module.id.toString, module.name))
+    val moduleList: List[(String, String)] = dbController.getAllModules(0).map(module => (module.id.toString, module.name))
     val courseList: List[(String, String)] = dbController.getAllCourses().map(course => (course.id.toString, s"${course.name} - ${Course.getGraduation(course)}"))
     Ok(views.html.main("Antrag", views.html.appreciationSingle(aFormSingle, uniList, moduleList, courseList)))
   }
@@ -212,6 +211,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     )
   }
 
+  // GET: Show anonymized appreciation status
   def showCurrentState(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     val appreciation: Appreciation = dbController.getSingleAppreciation(id)
     Ok(views.html.main("Status", views.html.state(appreciation)))
@@ -226,14 +226,18 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def login: Action[AnyContent] = Action(parse.anyContent) { implicit request =>
     loginForm.bindFromRequest.fold(
       errorForm => {
+        // Redirect and show error alert
         Redirect(routes.HomeController.loginPage()).flashing("error" -> "Fehlende Angaben!")
       },
       successForm => {
+        // Hash password input
         val user: User = dbController.getUser(successForm.username)
         val passInput: String = generateHash(successForm.password)
         println("Input Hash: " + passInput)
         println("DB Hash: " + user.password)
         println("Admin: " + user.admin)
+
+        // Validate username and password
         if (user.password == passInput) {
           if (user.admin) {
             println("Logged in successfully!")
@@ -252,12 +256,14 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   // GET: Logout current logged user
   def logout: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    // Clear session flash and redirect
     Redirect(routes.HomeController.home()).withNewSession.flashing("success" -> "Sie wurden erfolgreich abgemeldet!")
   }
 
   // GET: Admin panel
   def adminPanel: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (checkLogin(request)) {
+      // Get list of all appreciations and render on template
       val data: List[Appreciation] = dbController.getAllAppreciations()
       Ok(views.html.main("Admin Panel", views.html.adminPanel(data)))
     } else {
@@ -269,6 +275,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   // GET: Admin panel details
   def adminPanelDetails(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (checkLogin(request)) {
+      // Get appreciation details and render data on template
       val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
       val uploadedFiles: List[File] = getListOfFiles(id)
       val stateList: List[Int] = getStateList()
@@ -284,6 +291,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     if (checkLogin(request)) {
       stateForm.bindFromRequest.fold(
         errorForm => {
+          // Redirect and show error alert
           Redirect(routes.HomeController.adminPanelDetails(id)).flashing("error" -> "Fehler beim Ändern des Status!")
         },
         successForm => {
@@ -302,6 +310,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   // GET: AdminPanel courses
   def adminPanelCourses: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (checkLogin(request)) {
+      // Get list of all courses and render on template
       val coursesList: List[Course] = dbController.getAllCourses()
       Ok(views.html.main("Admin Panel", views.html.adminPanelCourses(coursesList)))
     } else {
@@ -309,58 +318,62 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     }
   }
 
-  // POST: Create new posts
-  def adminPanelCoursesPost = Action(parse.multipartFormData) { implicit request =>
+  // POST: Create new course
+  def adminPanelCoursesCreate = Action(parse.multipartFormData) { implicit request =>
     courseForm.bindFromRequest.fold(
       errorForm => {
+        // Redirect and show error alert
         Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
-        //        BadRequest(views.html.appreciationAll(errorForm))
       },
       successForm => {
-        // Create new appreciation in database
+        // Create new course in database
         dbController.createCourse(successForm.name, successForm.gradiation, successForm.semester)
 
-        // Redirect and show success alert after successfully transfer all form data
+        // Redirect and show success alert
         Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Der Studiengang "${successForm.name}" wurde erfolgreich angelegt!""")
       }
     )
   }
 
+  // GET: Remove specific course with all included modules
   def adminPanelSingleCourseRemove(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    // Create new appreciation in database
+    val course: Course = dbController.getCourse(id)
     if (dbController.removeCourse(id) > 0) {
-      // Redirect and show success alert after successfully transfer all form data
-      Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Der Studiengang mit der ID "${id}" wurde erfolgreich entfernt!""")
+      // Redirect after success
+      Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Der Studiengang "${course.name}" wurde erfolgreich entfernt!""")
     } else {
-      // Redirect and show success alert after successfully transfer all form data
-      Redirect(routes.HomeController.adminPanelCourses()).flashing("error" -> s"""Der Studiengang mit der ID "${id}" konnte nicht entfernt werden!""")
+      // Redirect and show error alert
+      Redirect(routes.HomeController.adminPanelCourses()).flashing("error" -> s"""Der Studiengang "${course.name}" konnte nicht entfernt werden!""")
     }
   }
 
+  // GET: Show single course page
   def adminPanelSingleCourse(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (checkLogin(request)) {
-      val course: Course = dbController.getSingleCourse(id)
-      val filledForm = courseForm.fill(CourseForm.Data(course.name, course.graduation, course.semester))
-      val courseModuleList = dbController.getModules(id)
-      Ok(views.html.main("Admin Panel", views.html.adminPanelSingleCourse(id, filledForm, courseModuleList)))
+      val course: Course = dbController.getCourse(id)
+      val filledForm = courseForm.fill(CourseData(course.name, course.graduation, course.semester))
+      val courseModuleList = dbController.getAllModules(id)
+      Ok(views.html.main("Admin Panel", views.html.adminPanelSingleCourse(id, filledForm, course, courseModuleList)))
     } else {
       Redirect(routes.HomeController.loginPage())
     }
   }
 
-  def adminPanelSingleCoursePost(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+  // POST: Edit existing course
+  def adminPanelSingleCourseEdit(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (checkLogin(request)) {
+      val oldCourse: Course = dbController.getCourse(id)
       courseForm.bindFromRequest.fold(
         errorForm => {
-          println(errorForm.errors)
+          // Redirect and show error alert
           Redirect(routes.HomeController.adminPanelSingleCourse(id)).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
         },
         successForm => {
-          // Create new appreciation in database
+          // Edit database entry
           dbController.editCourse(Course(id, successForm.name, successForm.gradiation, successForm.semester))
 
-          // Redirect and show success alert after successfully transfer all form data
-          Redirect(routes.HomeController.adminPanelSingleCourse(id)).flashing("success" -> s"""Der Studiengang "${successForm.name}" wurde erfolgreich aktualisiert!""")
+          // Redirect after success
+          Redirect(routes.HomeController.adminPanelSingleCourse(id)).flashing("success" -> s"""Der Studiengang "${oldCourse.name}" wurde erfolgreich aktualisiert!""")
         }
       )
     } else {
@@ -368,14 +381,37 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     }
   }
 
-  def adminPanelSingleModuleRemove(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    // Create new appreciation in database
-    if (dbController.removeModule(id) > 0) {
-      // Redirect and show success alert after successfully transfer all form data
-      Redirect(routes.HomeController.adminPanelCourses()).flashing("success" -> s"""Das Modul mit der ID "${id}" wurde erfolgreich entfernt!""")
+  // GET: Edit single module
+  def adminPanelSingleModuleEdit(courseId: Int, moduleId: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    if (checkLogin(request)) {
+      val oldModule: Module = dbController.getModule(moduleId)
+      moduleForm.bindFromRequest.fold(
+        errorForm => {
+          // Redirect and show error alert
+          Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
+        },
+        successForm => {
+          // Edit database entry
+          dbController.editModule(Module(moduleId, successForm.name, successForm.semester, courseId))
+
+          // Redirect after success
+          Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("success" -> s"""Das Modul "${oldModule.name}" wurde erfolgreich aktualisiert!""")
+        }
+      )
     } else {
-      // Redirect and show success alert after successfully transfer all form data
-      Redirect(routes.HomeController.adminPanelCourses()).flashing("error" -> s"""Das Modul mit der ID "${id}" konnte nicht entfernt werden!""")
+      Redirect(routes.HomeController.loginPage())
+    }
+  }
+
+  // GET: Remove single module from course
+  def adminPanelSingleModuleRemove(courseId: Int, moduleId: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    val module: Module = dbController.getModule(moduleId)
+    if (dbController.removeModule(moduleId) > 0) {
+      // Redirect after success
+      Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("success" -> s"""Das Modul "${module.name}" wurde erfolgreich entfernt!""")
+    } else {
+      // Redirect and show error alert
+      Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("error" -> s"""Das Modul "${module.name}" konnte nicht entfernt werden!""")
     }
   }
 

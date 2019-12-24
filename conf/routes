@@ -27,6 +27,7 @@ POST    /admin/course/edit/$id<[0-9]+>                                  controll
 GET     /admin/course/remove/$id<[0-9]+>                                controllers.HomeController.adminPanelSingleCourseRemove(id: Int)
 
 # AdminPanel: Modules
+POST    /admin/course/$course<[0-9]+>/module/create                    controllers.HomeController.adminPanelSingleModuleCreate(course: Int)
 POST    /admin/course/$course<[0-9]+>/module/edit/$module<[0-9]+>      controllers.HomeController.adminPanelSingleModuleEdit(course: Int, module: Int)
 GET     /admin/course/$course<[0-9]+>/module/remove/$module<[0-9]+>    controllers.HomeController.adminPanelSingleModuleRemove(course: Int, module: Int)
 

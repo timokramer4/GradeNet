@@ -12,6 +12,7 @@ libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.41"
 libraryDependencies += "org.postgresql" % "postgresql" % "9.4.1208"
 libraryDependencies += "org.playframework.anorm" %% "anorm" % "2.6.5"
 libraryDependencies += "com.outr" %% "hasher" % "1.2.2"
+libraryDependencies += "com.sun.mail" % "javax.mail" % "1.6.2"
 
 libraryDependencies ++= Seq(evolutions, jdbc)
 

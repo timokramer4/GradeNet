@@ -35,6 +35,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
    * @return
    */
   def home(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    Mailer.main(Array("a", "b"))
     Ok(views.html.main("Startseite", views.html.home()))
   }
 

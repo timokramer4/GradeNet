@@ -2,6 +2,10 @@ dt {
     font-weight: 400;
 }
 
+.clickable {
+    cursor: pointer;
+}
+
 .custom-file-input {
     position: absolute;
     top: 0;

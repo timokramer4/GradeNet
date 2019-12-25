@@ -1,5 +1,5 @@
 @import controllers.Forms.AppreciationForm
-@(aFormAll: Form[AppreciationForm.All], uniList: List[(String, String)])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
+@(aFormAll: Form[AppreciationForm.All], uniList: List[(String, String)], courseList: List[(String, String)])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, pageTitle: String = "Wechsel in neue Prüfungsordnung", flash: Flash)
 
 <div class="row">
     <div class="col-lg-12">
@@ -75,7 +75,37 @@
                     Symbol("_showConstraints") -> false,
                     Symbol("_label") -> "Hochschule/Uni",
                     Symbol("required") -> "")
-                <div class="form-group col-md-12">
+            </div>
+            <div class="form-row">
+                @helper.select(aFormAll("course"), courseList,
+                    Symbol("_class") -> "form-group col-md-6",
+                    Symbol("class") -> "form-control",
+                    Symbol("_label") -> "Studiengang",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("required") -> "")
+                @helper.inputText(aFormAll("currentPO"),
+                    Symbol("_class") -> "form-group col-md-3",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Aktuelle PO",
+                    Symbol("placeholder") -> "Aktuelle PO",
+                    Symbol("type") -> "number",
+                    Symbol("min") -> "2009",
+                    Symbol("max") -> "2020",
+                    Symbol("required") -> "")
+                @helper.inputText(aFormAll("newPO"),
+                    Symbol("_class") -> "form-group col-md-3",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Neue PO",
+                    Symbol("placeholder") -> "Neue PO",
+                    Symbol("type") -> "number",
+                    Symbol("min") -> "2009",
+                    Symbol("max") -> "2020",
+                    Symbol("required") -> "")
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
                     <label>Notenkonto</label>
                     <div class="input-group mb-3">
                         <div class="custom-file">

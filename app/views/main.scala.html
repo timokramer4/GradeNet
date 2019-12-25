@@ -47,7 +47,8 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item active">
-                        <a class="nav-link" href="@routes.HomeController.home">Startseite <span class="sr-only">(aktuell)</span></a>
+                        <a class="nav-link" href="@routes.HomeController.home">Startseite <span class="sr-only">
+                            (aktuell)</span></a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="mode"
@@ -55,14 +56,28 @@
                             Antrag erstellen
                         </a>
                         <div class="dropdown-menu" aria-labelledby="mode">
-                            <a class="dropdown-item" href="@routes.HomeController.appreciationAll">Wechsel in neue Prüfungsordnung</a>
-                            <a class="dropdown-item" href="@routes.HomeController.appreciationSingle">Anerkennung einzelner Studienleistungen</a>
+                            <a class="dropdown-item" href="@routes.HomeController.appreciationAll">
+                                Wechsel in neue Prüfungsordnung</a>
+                            <a class="dropdown-item" href="@routes.HomeController.appreciationSingle">
+                                Anerkennung einzelner Studienleistungen</a>
                         </div>
-                    </li>
+                    </li >
+                    @if(session.get("connected")) {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="admin"
+                            role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Admin Bereich
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="admin">
+                                <a class="dropdown-item" href="@routes.HomeController.adminPanel">Anträge</a>
+                                <a class="dropdown-item" href="@routes.HomeController.adminPanelCourses">Studiengänge</a>
+                            </div>
+                        </li>
+                    }
                 </ul>
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
-                    @if(session.get("connected") && request.uri.contains(routes.HomeController.adminPanel.toString())) {
+                    @if(session.get("connected")) {
                         <a href="@routes.HomeController.logout">
                             <button class="btn btn-outline-danger my-2 my-sm-0" type="submit">
                                 <i class="fas fa-sign-out-alt"></i>
@@ -87,27 +102,10 @@
         @content
         </div>
 
-        <script>
-                // Data tables
-                $(document).ready(function () {
-                    $('.dataTable').DataTable();
-                });
+            <!-- Custom JS -->
+        <script src="/assets/javascripts/custom.js"></script>
 
-                // Show current selected file
-                $('body').on('change', '.custom-file-input', function () {
-                    console.log("Change");
-
-                    // Get filename
-                    var fileName = $(this).val().replace(/^.*[\\\/]/, '');
-
-                    // Replace default string
-                    if(fileName == ""){
-                        $(this).parent().parent().next('.custom-file-label')[0].innerText = "Datei auswählen";
-                    } else {
-                        $(this).parent().parent().next('.custom-file-label')[0].innerText = fileName;
-                    }
-                });
-        </script>
+            <!-- Bootstrap JS -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 

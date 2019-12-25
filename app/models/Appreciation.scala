@@ -2,7 +2,7 @@ package models
 
 import models.State.stateToString
 
-case class Appreciation(id: Int, firstName: String, lastName: String, matrNr: Int, email: String, university: String, state: State)
+case class Appreciation(id: Int, firstName: String, lastName: String, matrNr: Int, email: String, university: String, course: Int, state: State)
 
 object Appreciation {
   def getString(student: Appreciation, key: String): String = {

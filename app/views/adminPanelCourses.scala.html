@@ -1,0 +1,104 @@
+@import java.io.File
+@import controllers.Forms.CourseForm._
+@import models.Course._
+@(courseList: List[Course])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, pageTitle: String = "Studiengänge", flash: Flash)
+
+<div class="row">
+    <div class="col-lg-12">
+            <!-- Page content -->
+        <div class="input-group mb-2 align-items-center">
+            <h1 class="mr-3">AdminPanel - @pageTitle</h1>
+        </div>
+
+        <br>
+        @if(!flash.isEmpty) {
+            <div class="alert alert-dismissible fade show" id="alert" role="alert">
+                @if(flash.get("error")) {
+                    <script>document.getElementById("alert").classList.add("alert-danger")</script>
+                } else if(flash.get("success")){
+                <script>document.getElementById("alert").classList.add("alert-success")</script>
+                }
+                @{
+                    if(flash.get("error")) {
+                        flash.get("error")
+                    } else if(flash.get("success")) {
+                        flash.get("success")
+                    }
+                }
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+        }
+
+        <h3>Neuen Studiengang anlegen</h3>
+        @helper.form(action = routes.HomeController.adminPanelCoursesCreate(), Symbol("enctype") -> "multipart/form-data") {
+            @helper.CSRF.formField
+            <div class="form-row">
+                @helper.inputText(courseForm("name"),
+                    Symbol("_class") -> "form-group col-md-4",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Name des Studiengangs",
+                    Symbol("placeholder") -> "Studiengang",
+                    Symbol("required") -> "")
+                @helper.input(courseForm("graduation"),
+                    Symbol("_class") -> "form-group col-md-3",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Abschluss",
+                    Symbol("required") -> "") { (id, name, value, args) =>
+                    <select type="text" name="@name" id="@id" @toHtmlArgs(args)>
+                        <option value="0">Bachelor</option>
+                        <option value="1">Master</option>
+                    </select>
+                }
+                @helper.inputText(courseForm("semester"),
+                    Symbol("_class") -> "form-group col-md-3",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Anzahl der Fachsemester",
+                    Symbol("placeholder") -> "Semester",
+                    Symbol("type") -> "number",
+                    Symbol("min") -> "3",
+                    Symbol("max") -> "7",
+                    Symbol("required") -> "")
+                <div class="form-group col-md-2 d-flex flex-column">
+                    <button type="submit" id="addModule" class="btn btn-success btn-block mt-auto mb-2"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+        }
+
+        <br>
+        <hr>
+        <br>
+
+        <h3>Bestehende Studiengänge</h3>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover nowrap dataTable" with="100%">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Studiengang</th>
+                        <th scope="col">Abschluss</th>
+                        <th scope="col">Anzahl der Semester</th>
+                        <th scope="col">Aktion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @for(course <- courseList) {
+                    <tr class="clickable" data-href="@routes.HomeController.adminPanelSingleCourse(getId(course))">
+                        <th class="align-middle" id="id" scope="row">@getString(course, "id")</th>
+                        <td class="align-middle">@getString(course, "name")</td>
+                        <td class="align-middle">@getGraduation(course)</td>
+                        <td class="align-middle">@getString(course, "semester")</td>
+                        <td class="align-middle">
+                            <button type="button" id="removeCourse" data-href="@routes.HomeController.adminPanelSingleCourseRemove(getId(course))" class="btn btn-danger float-right clickable">
+                                <i class="fas fa-trash" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -2,37 +2,39 @@
 # This file defines all application routes (Higher priority routes first)
 
 # General
-GET     /                                                               controllers.HomeController.home
-GET     /appreciationSingle                                             controllers.HomeController.appreciationSingle
-POST    /appreciationSingle                                             controllers.HomeController.appreciationSinglePost
-GET     /appreciationAll                                                controllers.HomeController.appreciationAll
-POST    /appreciationAll                                                controllers.HomeController.appreciationAllPost
-GET     /state/:id                                                      controllers.HomeController.showCurrentState(id: Int)
+GET     /                                                                   controllers.HomeController.home
+GET     /appreciationSingle                                                 controllers.HomeController.appreciationSingle
+POST    /appreciationSingle                                                 controllers.HomeController.appreciationSinglePost
+GET     /appreciationAll                                                    controllers.HomeController.appreciationAll
+POST    /appreciationAll                                                    controllers.HomeController.appreciationAllPost
+GET     /state/$id<[0-9]+>                                                  controllers.HomeController.showCurrentState(id: Int)
 
 # Login and logout
-GET     /login                                                          controllers.HomeController.loginPage
-POST    /login                                                          controllers.HomeController.login
-GET     /logout                                                         controllers.HomeController.logout
+GET     /auth/$id<[0-9]+>                                                   controllers.HomeController.stateLogin(id: Int)
+POST    /auth                                                               controllers.HomeController.auth
+GET     /login                                                              controllers.HomeController.adminLogin
+POST    /login                                                              controllers.HomeController.login
+GET     /logout                                                             controllers.HomeController.logout
 
 # AdminPanel: Appreciations
-GET     /admin                                                          controllers.HomeController.adminPanel
-GET     /admin/$id<[0-9]+>                                              controllers.HomeController.adminPanelDetails(id: Int)
-POST    /admin/$id<[0-9]+>                                              controllers.HomeController.adminPanelDetailsChangeState(id: Int)
+GET     /dashboard                                                          controllers.HomeController.adminPanel
+GET     /dashboard/$id<[0-9]+>                                              controllers.HomeController.adminPanelDetails(id: Int)
+POST    /dashboard/$id<[0-9]+>                                              controllers.HomeController.adminPanelDetailsChangeState(id: Int)
 
 # AdminPanel: Courses
-GET     /admin/courses                                                  controllers.HomeController.adminPanelCourses
-POST    /admin/course/create                                            controllers.HomeController.adminPanelCoursesCreate
-GET     /admin/course/$id<[0-9]+>                                       controllers.HomeController.adminPanelSingleCourse(id: Int)
-POST    /admin/course/edit/$id<[0-9]+>                                  controllers.HomeController.adminPanelSingleCourseEdit(id: Int)
-GET     /admin/course/remove/$id<[0-9]+>                                controllers.HomeController.adminPanelSingleCourseRemove(id: Int)
+GET     /dashboard/courses                                                  controllers.HomeController.adminPanelCourses
+POST    /dashboard/courses/create                                           controllers.HomeController.adminPanelCoursesCreate
+GET     /dashboard/courses/$id<[0-9]+>                                      controllers.HomeController.adminPanelSingleCourse(id: Int)
+POST    /dashboard/courses/edit/$id<[0-9]+>                                 controllers.HomeController.adminPanelSingleCourseEdit(id: Int)
+GET     /dashboard/courses/remove/$id<[0-9]+>                               controllers.HomeController.adminPanelSingleCourseRemove(id: Int)
 
 # AdminPanel: Modules
-POST    /admin/course/$course<[0-9]+>/module/create                    controllers.HomeController.adminPanelSingleModuleCreate(course: Int)
-POST    /admin/course/$course<[0-9]+>/module/edit/$module<[0-9]+>      controllers.HomeController.adminPanelSingleModuleEdit(course: Int, module: Int)
-GET     /admin/course/$course<[0-9]+>/module/remove/$module<[0-9]+>    controllers.HomeController.adminPanelSingleModuleRemove(course: Int, module: Int)
+POST    /dashboard/courses/$course<[0-9]+>/module/create                    controllers.HomeController.adminPanelSingleModuleCreate(course: Int)
+POST    /dashboard/courses/$course<[0-9]+>/module/edit/$module<[0-9]+>      controllers.HomeController.adminPanelSingleModuleEdit(course: Int, module: Int)
+GET     /dashboard/courses/$course<[0-9]+>/module/remove/$module<[0-9]+>    controllers.HomeController.adminPanelSingleModuleRemove(course: Int, module: Int)
 
 # AdminPanel: Download specific file
-GET     /download/$id<[0-9]+>/:fileName                                 controllers.HomeController.downloadFile(id: Int, fileName: String)
+GET     /download/$id<[0-9]+>/:fileName                                     controllers.HomeController.downloadFile(id: Int, fileName: String)
 
 # Static ressources
-GET     /assets/*file                                                   controllers.Assets.versioned(file)
+GET     /assets/*file                                                       controllers.Assets.versioned(file)

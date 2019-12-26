@@ -4,6 +4,7 @@
 * two arguments, a `String` for the title of the page and an `Html`
 * object to insert into the body of the page.
 *@
+
 @(title: String, content: Html)(implicit session: Session, request: Request[AnyContent], flash: Flash)
 
 <!DOCTYPE html>
@@ -62,7 +63,7 @@
                                 Anerkennung einzelner Studienleistungen</a>
                         </div>
                     </li >
-                    @if(session.get("connected")) {
+                    @if(session.get("admin")) {
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="admin"
                             role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -77,7 +78,7 @@
                 </ul>
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
-                    @if(session.get("connected")) {
+                    @if(session.get("admin")) {
                         <a href="@routes.HomeController.logout">
                             <button class="btn btn-outline-danger my-2 my-sm-0" type="submit">
                                 <i class="fas fa-sign-out-alt"></i>

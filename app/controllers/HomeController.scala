@@ -13,7 +13,7 @@ import models.State._
 import models.{Appreciation, Course, Module, User}
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, _}
-import controllers.Hasher.generateHash
+import controllers.Hasher._
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.io.Directory
@@ -32,6 +32,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   /**
    * GET: Landing page
+   *
    * @return
    */
   def home(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
@@ -40,6 +41,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   /**
    * GET: Appreciation single grades
+   *
    * @return
    */
   def appreciationSingle(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
@@ -52,6 +54,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   /**
    * POST: Form appreciation single grades
+   *
    * @return
    */
   def appreciationSinglePost = Action(parse.multipartFormData) { implicit request =>
@@ -90,7 +93,8 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
                   }
 
                   // Create new appreciation in database
-                  petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, successForm.course)
+                  val randomPassword = generateRandomPassword()
+                  petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, generateHash(randomPassword, false), successForm.university, successForm.course)
 
                   // Remove existing directory recursive
                   if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
@@ -163,6 +167,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   /**
    * GET: Appreciation all grades
+   *
    * @return
    */
   def appreciationAll(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
@@ -174,6 +179,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   /**
    * POST: Form appreciation all grades
+   *
    * @return
    */
   def appreciationAllPost = Action(parse.multipartFormData) { implicit request =>
@@ -198,7 +204,9 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
               }
 
               // Create new appreciation in database
-              petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, successForm.course)
+              val randomPassword = generateRandomPassword()
+              println(randomPassword)
+              petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, generateHash(randomPassword, false), successForm.university, successForm.course)
 
               // Remove existing directory recursive
               if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
@@ -228,36 +236,63 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   /**
    * GET: Show anonymized appreciation status
+   *
    * @param id
    * @return
    */
   def showCurrentState(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    val appreciation: Appreciation = dbController.getSingleAppreciation(id)
-    Ok(views.html.main("Status", views.html.state(appreciation)))
+    if (sessionExists(s"appreciation${id}")) {
+      val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
+      val uploadedFiles: List[File] = getListOfFiles(id)
+      val stateList: List[Int] = getStateList()
+      val moduleList: List[Module] = dbController.getModulesFromAppreciation(id)
+      Ok(views.html.main("Status", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList)))
+    } else {
+      Redirect(routes.HomeController.stateLogin(id))
+    }
   }
 
   /**
-   * GET: Login page
+   * GET: Admin login page
+   *
    * @return
    */
-  def loginPage: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    Ok(views.html.main("Anmeldung", views.html.login()))
+  def adminLogin: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    if (sessionExists("admin")) {
+      Redirect(routes.HomeController.adminPanel())
+    } else {
+      Ok(views.html.main("Anmeldung", views.html.login(true, 0)))
+    }
+  }
+
+  /**
+   * GET: State login page
+   *
+   * @return
+   */
+  def stateLogin(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    if (sessionExists(s"appreciation${id}")) {
+      Redirect(routes.HomeController.showCurrentState(id))
+    } else {
+      Ok(views.html.main("Anmeldung", views.html.login(false, id)))
+    }
   }
 
   /**
    * POST: Login user
+   *
    * @return
    */
   def login: Action[AnyContent] = Action(parse.anyContent) { implicit request =>
     loginForm.bindFromRequest.fold(
       errorForm => {
         // Redirect and show error alert
-        Redirect(routes.HomeController.loginPage()).flashing("error" -> "Fehlende Angaben!")
+        Redirect(routes.HomeController.adminLogin()).flashing("error" -> "Fehlende Angaben!")
       },
       successForm => {
         // Hash password input
         val user: User = dbController.getUser(successForm.username)
-        val passInput: String = generateHash(successForm.password)
+        val passInput: String = generateHash(successForm.password, false)
         println("Input Hash: " + passInput)
         println("DB Hash: " + user.password)
         println("Admin: " + user.admin)
@@ -266,14 +301,44 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         if (user.password == passInput) {
           if (user.admin) {
             println("Logged in successfully!")
-            Redirect(routes.HomeController.adminPanel()).withSession("connected" -> user.username)
+            Redirect(routes.HomeController.adminPanel()).withSession(("admin", user.username))
           } else {
             println("No permissions!")
-            Redirect(routes.HomeController.loginPage()).flashing("error" -> "Fehlende Berechtigungen!")
+            Redirect(routes.HomeController.adminLogin()).flashing("error" -> "Fehlende Berechtigungen!")
           }
         } else {
           println("Access denied!")
-          Redirect(routes.HomeController.loginPage()).flashing("error" -> "Benutzername oder Passwort falsch!")
+          Redirect(routes.HomeController.adminLogin()).flashing("error" -> "Benutzername oder Passwort falsch!")
+        }
+      }
+    )
+  }
+
+  /**
+   * POST: Login user
+   *
+   * @return
+   */
+  def auth: Action[AnyContent] = Action(parse.anyContent) { implicit request =>
+    authForm.bindFromRequest.fold(
+      errorForm => {
+        // Redirect and show error alert
+        Redirect(routes.HomeController.adminLogin()).flashing("error" -> "Fehlende Angaben!")
+      },
+      successForm => {
+        // Hash password input
+        val appreciation: Appreciation = dbController.getSingleAppreciation(successForm.appreciationId)
+        val passInput: String = generateHash(successForm.password, false)
+        println("Input Hash: " + passInput)
+        println("DB Hash: " + appreciation.password)
+
+        // Validate username and password
+        if (appreciation.password == passInput) {
+          println("Logged in successfully!")
+          Redirect(routes.HomeController.showCurrentState(successForm.appreciationId)).withSession((s"appreciation${successForm.appreciationId}", appreciation.id.toString))
+        } else {
+          println("Access denied!")
+          Redirect(routes.HomeController.stateLogin(successForm.appreciationId)).flashing("error" -> s"Das Passwort für Antrag #${successForm.appreciationId} ist falsch!")
         }
       }
     )
@@ -281,253 +346,320 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   /**
    * GET: Logout current logged user
+   *
    * @return
    */
-  def logout: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    // Clear session flash and redirect
-    Redirect(routes.HomeController.home()).withNewSession.flashing("success" -> "Sie wurden erfolgreich abgemeldet!")
+  def logout: Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      // Clear session flash and redirect
+      Redirect(routes.HomeController.home()).withNewSession.flashing("success" -> "Sie wurden erfolgreich abgemeldet!")
   }
 
   /**
    * GET: Admin panel
+   *
    * @return
    */
-  def adminPanel: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    if (checkLogin(request)) {
-      // Get list of all appreciations and render on template
-      val data: List[Appreciation] = dbController.getAllAppreciations()
-      Ok(views.html.main("Admin Panel", views.html.adminPanel(data)))
-    } else {
-      Redirect(routes.HomeController.loginPage())
-    }
+  def adminPanel: Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      if (sessionExists("admin")) {
+        // Get list of all appreciations and render on template
+        val data: List[Appreciation] = dbController.getAllAppreciations()
+        Ok(views.html.main("Admin Panel", views.html.adminPanel(data)))
+      } else {
+        Redirect(routes.HomeController.adminLogin())
+      }
   }
 
   /**
    * GET: Admin panel details
+   *
    * @param id
    * @return
    */
-  def adminPanelDetails(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    if (checkLogin(request)) {
-      // Get appreciation details and render data on template
-      val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
-      val uploadedFiles: List[File] = getListOfFiles(id)
-      val stateList: List[Int] = getStateList()
-      val moduleList: List[Module] = dbController.getModulesFromAppreciation(id)
-      Ok(views.html.main("Admin Panel", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList)))
-    } else {
-      Redirect(routes.HomeController.loginPage())
-    }
+  def adminPanelDetails(id: Int): Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      if (sessionExists("admin")) {
+        // Get appreciation details and render data on template
+        val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
+        val uploadedFiles: List[File] = getListOfFiles(id)
+        val stateList: List[Int] = getStateList()
+        val moduleList: List[Module] = dbController.getModulesFromAppreciation(id)
+        Ok(views.html.main("Admin Panel", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList)))
+      } else {
+        Redirect(routes.HomeController.adminLogin())
+      }
   }
 
   /**
    * POST: Change appreciation state
+   *
    * @param id
    * @return
    */
-  def adminPanelDetailsChangeState(id: Int): Action[AnyContent] = Action(parse.anyContent) { implicit request =>
-    if (checkLogin(request)) {
-      stateForm.bindFromRequest.fold(
-        errorForm => {
-          // Redirect and show error alert
-          Redirect(routes.HomeController.adminPanelDetails(id)).flashing("error" -> "Fehler beim Ändern des Status!")
-        },
-        successForm => {
-          // Change state in database
-          dbController.changeAppreciationState(id, successForm.state)
+  def adminPanelDetailsChangeState(id: Int): Action[AnyContent] = Action(parse.anyContent) {
+    implicit request =>
+      if (sessionExists("admin")) {
+        stateForm.bindFromRequest.fold(
+          errorForm => {
+            // Redirect and show error alert
+            Redirect(routes.HomeController.adminPanelDetails(id)).flashing("error" -> "Fehler beim Ändern des Status!")
+          },
+          successForm => {
+            // Change state in database
+            dbController.changeAppreciationState(id, successForm.state)
 
-          // Redirect after change and show changes
-          Redirect(routes.HomeController.adminPanelDetails(id)).flashing("success" -> s"""Status von Antrag #${id} wurde erfolgreich auf "${stateToString(successForm.state)}" geändert!""")
-        }
-      )
-    } else {
-      Redirect(routes.HomeController.loginPage())
-    }
+            // Redirect after change and show changes
+            Redirect(routes.HomeController.adminPanelDetails(id)).flashing("success" ->
+              s"""Status von Antrag #${
+                id
+              } wurde erfolgreich auf "${
+                stateToString(successForm.state)
+              }" geändert!""")
+          }
+        )
+      } else {
+        Redirect(routes.HomeController.adminLogin())
+      }
   }
 
   /**
    * GET: AdminPanel courses
+   *
    * @return
    */
-  def adminPanelCourses: Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    if (checkLogin(request)) {
-      // Get list of all courses and render on template
-      val coursesList: List[Course] = dbController.getAllCourses()
-      Ok(views.html.main("Admin Panel", views.html.adminPanelCourses(coursesList)))
-    } else {
-      Redirect(routes.HomeController.loginPage())
-    }
+  def adminPanelCourses: Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      if (sessionExists("admin")) {
+        // Get list of all courses and render on template
+        val coursesList: List[Course] = dbController.getAllCourses()
+        Ok(views.html.main("Admin Panel", views.html.adminPanelCourses(coursesList)))
+      } else {
+        Redirect(routes.HomeController.adminLogin())
+      }
   }
 
   /**
    * POST: Create new course
+   *
    * @return
    */
-  def adminPanelCoursesCreate = Action(parse.multipartFormData) { implicit request =>
-    courseForm.bindFromRequest.fold(
-      errorForm => {
-        // Redirect and show error alert
-        Redirect(routes.HomeController.adminPanelCourses).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
-      },
-      successForm => {
-        // Create new course in database
-        dbController.createCourse(successForm.name, successForm.gradiation, successForm.semester)
+  def adminPanelCoursesCreate = Action(parse.multipartFormData) {
+    implicit request =>
+      courseForm.bindFromRequest.fold(
+        errorForm => {
+          // Redirect and show error alert
+          Redirect(routes.HomeController.adminPanelCourses).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
+        },
+        successForm => {
+          // Create new course in database
+          dbController.createCourse(successForm.name, successForm.gradiation, successForm.semester)
 
-        // Redirect and show success alert
-        Redirect(routes.HomeController.adminPanelCourses).flashing("success" -> s"""Der Studiengang "${successForm.name}" wurde erfolgreich angelegt!""")
-      }
-    )
+          // Redirect and show success alert
+          Redirect(routes.HomeController.adminPanelCourses).flashing("success" ->
+            s"""Der Studiengang "${
+              successForm.name
+            }" wurde erfolgreich angelegt!""")
+        }
+      )
   }
 
   /**
    * GET: Remove specific course with all included modules
+   *
    * @param id
    * @return
    */
-  def adminPanelSingleCourseRemove(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    val course: Course = dbController.getCourse(id)
-    if (dbController.removeCourse(id) > 0) {
-      // Redirect after success
-      Redirect(routes.HomeController.adminPanelCourses).flashing("success" -> s"""Der Studiengang "${course.name} - ${Course.getGraduation(course)}" wurde erfolgreich entfernt!""")
-    } else {
-      // Redirect and show error alert
-      Redirect(routes.HomeController.adminPanelCourses).flashing("error" -> s"""Der Studiengang "${course.name} - ${Course.getGraduation(course)}" konnte nicht entfernt werden!""")
-    }
+  def adminPanelSingleCourseRemove(id: Int): Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      if (sessionExists("admin")) {
+        val course: Course = dbController.getCourse(id)
+        if (dbController.removeCourse(id) > 0) {
+          // Redirect after success
+          Redirect(routes.HomeController.adminPanelCourses).flashing("success" ->
+            s"""Der Studiengang "${
+              course.name
+            } - ${
+              Course.getGraduation(course)
+            }" wurde erfolgreich entfernt!""")
+        } else {
+          // Redirect and show error alert
+          Redirect(routes.HomeController.adminPanelCourses).flashing("error" ->
+            s"""Der Studiengang "${
+              course.name
+            } - ${
+              Course.getGraduation(course)
+            }" konnte nicht entfernt werden!""")
+        }
+      } else {
+        Redirect(routes.HomeController.adminLogin())
+      }
   }
 
   /**
    * GET: Show single course page
+   *
    * @param id
    * @return
    */
-  def adminPanelSingleCourse(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    if (checkLogin(request)) {
-      val course: Course = dbController.getCourse(id)
-      val filledForm = courseForm.fill(CourseData(course.name, course.graduation, course.semester))
-      val courseModuleList = dbController.getAllModules(id)
-      Ok(views.html.main("Admin Panel", views.html.adminPanelSingleCourse(id, filledForm, course, courseModuleList)))
-    } else {
-      Redirect(routes.HomeController.loginPage)
-    }
+  def adminPanelSingleCourse(id: Int): Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      if (sessionExists("admin")) {
+        val course: Course = dbController.getCourse(id)
+        val filledForm = courseForm.fill(CourseData(course.name, course.graduation, course.semester))
+        val courseModuleList = dbController.getAllModules(id)
+        Ok(views.html.main("Admin Panel", views.html.adminPanelSingleCourse(id, filledForm, course, courseModuleList)))
+      } else {
+        Redirect(routes.HomeController.adminLogin())
+      }
   }
 
   /**
    * POST: Edit existing course
+   *
    * @param id
    * @return
    */
-  def adminPanelSingleCourseEdit(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    if (checkLogin(request)) {
-      val oldCourse: Course = dbController.getCourse(id)
-      courseForm.bindFromRequest.fold(
-        errorForm => {
-          // Redirect and show error alert
-          Redirect(routes.HomeController.adminPanelSingleCourse(id)).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
-        },
-        successForm => {
-          // Edit database entry
-          dbController.editCourse(Course(id, successForm.name, successForm.gradiation, successForm.semester))
+  def adminPanelSingleCourseEdit(id: Int): Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      if (sessionExists("admin")) {
+        val oldCourse: Course = dbController.getCourse(id)
+        courseForm.bindFromRequest.fold(
+          errorForm => {
+            // Redirect and show error alert
+            Redirect(routes.HomeController.adminPanelSingleCourse(id)).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
+          },
+          successForm => {
+            // Edit database entry
+            dbController.editCourse(Course(id, successForm.name, successForm.gradiation, successForm.semester))
 
-          // Redirect after success
-          Redirect(routes.HomeController.adminPanelSingleCourse(id)).flashing("success" -> s"""Der Studiengang "${oldCourse.name}" wurde erfolgreich aktualisiert!""")
-        }
-      )
-    } else {
-      Redirect(routes.HomeController.loginPage())
-    }
+            // Redirect after success
+            Redirect(routes.HomeController.adminPanelSingleCourse(id)).flashing("success" ->
+              s"""Der Studiengang "${
+                oldCourse.name
+              }" wurde erfolgreich aktualisiert!""")
+          }
+        )
+      } else {
+        Redirect(routes.HomeController.adminLogin())
+      }
   }
 
   /**
    * POST: Create new course
+   *
    * @param courseId
    * @return
    */
-  def adminPanelSingleModuleCreate(courseId: Int) = Action(parse.multipartFormData) { implicit request =>
-    moduleForm.bindFromRequest.fold(
-      errorForm => {
-        // Redirect and show error alert
-        Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
-      },
-      successForm => {
-        // Create new module in database
-        dbController.createModule(successForm.name, successForm.semester, courseId)
-
-        // Redirect and show success alert
-        Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("success" -> s"""Das Modul "${successForm.name}" wurde erfolgreich angelegt!""")
-      }
-    )
-  }
-
-  /**
-   * GET: Edit single module
-   * @param courseId
-   * @param moduleId
-   * @return
-   */
-  def adminPanelSingleModuleEdit(courseId: Int, moduleId: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    if (checkLogin(request)) {
-      val oldModule: Module = dbController.getModule(moduleId)
+  def adminPanelSingleModuleCreate(courseId: Int) = Action(parse.multipartFormData) {
+    implicit request =>
       moduleForm.bindFromRequest.fold(
         errorForm => {
           // Redirect and show error alert
           Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
         },
         successForm => {
-          // Edit database entry
-          dbController.editModule(Module(moduleId, successForm.name, successForm.semester, courseId))
+          // Create new module in database
+          dbController.createModule(successForm.name, successForm.semester, courseId)
 
-          // Redirect after success
-          Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("success" -> s"""Das Modul "${oldModule.name}" wurde erfolgreich aktualisiert!""")
+          // Redirect and show success alert
+          Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("success" ->
+            s"""Das Modul "${
+              successForm.name
+            }" wurde erfolgreich angelegt!""")
         }
       )
-    } else {
-      Redirect(routes.HomeController.loginPage())
-    }
   }
 
   /**
-   * GET: Remove single module from course
+   * GET: Edit single module
+   *
    * @param courseId
    * @param moduleId
    * @return
    */
-  def adminPanelSingleModuleRemove(courseId: Int, moduleId: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    val module: Module = dbController.getModule(moduleId)
-    if (dbController.removeModule(moduleId) > 0) {
-      // Redirect after success
-      Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("success" -> s"""Das Modul "${module.name}" wurde erfolgreich entfernt!""")
-    } else {
-      // Redirect and show error alert
-      Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("error" -> s"""Das Modul "${module.name}" konnte nicht entfernt werden!""")
-    }
+  def adminPanelSingleModuleEdit(courseId: Int, moduleId: Int): Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      if (sessionExists("admin")) {
+        val oldModule: Module = dbController.getModule(moduleId)
+        moduleForm.bindFromRequest.fold(
+          errorForm => {
+            // Redirect and show error alert
+            Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
+          },
+          successForm => {
+            // Edit database entry
+            dbController.editModule(Module(moduleId, successForm.name, successForm.semester, courseId))
+
+            // Redirect after success
+            Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("success" ->
+              s"""Das Modul "${
+                oldModule.name
+              }" wurde erfolgreich aktualisiert!""")
+          }
+        )
+      } else {
+        Redirect(routes.HomeController.adminLogin())
+      }
+  }
+
+  /**
+   * GET: Remove single module from course
+   *
+   * @param courseId
+   * @param moduleId
+   * @return
+   */
+  def adminPanelSingleModuleRemove(courseId: Int, moduleId: Int): Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      if (sessionExists("admin")) {
+        val module: Module = dbController.getModule(moduleId)
+        if (dbController.removeModule(moduleId) > 0) {
+          // Redirect after success
+          Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("success" ->
+            s"""Das Modul "${
+              module.name
+            }" wurde erfolgreich entfernt!""")
+        } else {
+          // Redirect and show error alert
+          Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("error" ->
+            s"""Das Modul "${
+              module.name
+            }" konnte nicht entfernt werden!""")
+        }
+      } else {
+        Redirect(routes.HomeController.adminLogin())
+      }
   }
 
   /**
    * GET: Download a specific file
+   *
    * @param id
    * @param fileName
    * @return
    */
-  def downloadFile(id: Int, fileName: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    if (checkLogin(request)) {
-      implicit val ec = ExecutionContext.global
-      val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
-      Ok.sendFile(
-        content = new java.io.File(s"${uploadDir}/${id}/${fileName}"),
-        fileName = _ => s"Antrag#${id}_${appreciationData.lastName}_${appreciationData.firstName}_${fileName.replace(' ', '_')}",
-        inline = false
-      )
-    } else {
-      Redirect(routes.HomeController.loginPage())
-    }
+  def downloadFile(id: Int, fileName: String): Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      if (sessionExists("admin") || sessionExists(s"appreciation${
+        id
+      }")) {
+        implicit val ec = ExecutionContext.global
+        val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
+        Ok.sendFile(
+          content = new java.io.File(s"${uploadDir}/${id}/${fileName}"), fileName = _ => s"Antrag#${id}_${appreciationData.lastName}_${appreciationData.firstName}_${fileName.replace(' ', '_')}", inline = false)
+      } else {
+        Redirect(routes.HomeController.adminLogin())
+      }
   }
 
   /** *************************
-   ** HELPER FUNCTIONS
-   ** *************************/
+   * * HELPER FUNCTIONS
+   * * *************************/
 
   /**
    * Convert JSON Array in (value, content) pair for select field
+   *
    * @param jsValue
    * @return
    */
@@ -540,6 +672,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   /**
    * Extract JSON property
+   *
    * @param v
    * @param property
    * @return
@@ -556,11 +689,16 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
   /**
    * Return list of all files
+   *
    * @param id
    * @return
    */
   def getListOfFiles(id: Int): List[File] = {
-    val dir = new File(s"${uploadDir}/${id}")
+    val dir = new File(s"${
+      uploadDir
+    }/${
+      id
+    }")
     if (dir.exists && dir.isDirectory) {
       dir.listFiles.filter(_.isFile).toList
     } else {
@@ -569,15 +707,18 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   }
 
   /**
-   * Check login session
+   * Check exist state of session
+   *
+   * @param sessionName
    * @param request
    * @return
    */
-  def checkLogin(request: Request[AnyContent]): Boolean = {
+  def sessionExists(sessionName: String)(implicit request: Request[AnyContent]): Boolean = {
     request.session
-      .get("connected")
-      .map { loggedUser =>
-        return true
+      .get(sessionName)
+      .map {
+        _ =>
+          return true
       }.getOrElse {
       return false
     }

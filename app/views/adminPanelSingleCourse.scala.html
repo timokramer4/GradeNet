@@ -138,7 +138,7 @@
                     Symbol("_label") -> "Fachsemester",
                     Symbol("placeholder") -> "Semester",
                     Symbol("type") -> "number",
-                    Symbol("min") -> "3",
+                    Symbol("min") -> "1",
                     Symbol("max") -> "7",
                     Symbol("required") -> "")
                 <div class="form-group col-md-2 d-flex flex-column">
@@ -188,7 +188,7 @@
             <script>
                     $('[id="editModuleBtn"]').on('click', function () {
                         // Change form action dynamically
-                        $('#moduleEditForm').attr("action", "/admin/course/@(course.id)/module/edit/" + $(this).data("id"))
+                        $('#moduleEditForm').attr("action", "@routes.HomeController.adminPanelCourses/@(course.id)/module/edit/" + $(this).data("id"))
                         // Change form values and parameters
                         $('#modalTitle').text("Modul: " + $(this).data("name"));
                         $('#moduleName').val($(this).data("name"));

@@ -10,12 +10,15 @@ case object Processing extends State
 
 case object Meeting extends State
 
+case object MissingInfos extends State
+
 case object Closed extends State
 
 object State {
   val openStr: String = "Offen"
   val processingStr: String = "In Bearbeitung"
   val meetingStr: String = "Terminvereinbarung"
+  val missingInfos: String = "Fehlende Informationen"
   val closedStr: String = "Abgeschlossen"
   val noneStr: String = "n.A."
 
@@ -26,6 +29,7 @@ object State {
           case Open => return openStr
           case Processing => return processingStr
           case Meeting => return meetingStr
+          case MissingInfos => return missingInfos
           case Closed => return closedStr
           case _ => noneStr
         }
@@ -35,7 +39,8 @@ object State {
           case 0 => return openStr
           case 1 => return processingStr
           case 2 => return meetingStr
-          case 3 => return closedStr
+          case 3 => return missingInfos
+          case 4 => return closedStr
           case _ => noneStr
         }
       }
@@ -48,7 +53,8 @@ object State {
           case Open => return 0
           case Processing => return 1
           case Meeting => return 2
-          case Closed => return 3
+          case MissingInfos => return 3
+          case Closed => return 4
         }
       }
       case i: Int => {
@@ -56,7 +62,8 @@ object State {
           case 0 => return Open
           case 1 => return Processing
           case 2 => return Meeting
-          case 3 => return Closed
+          case 3 => return MissingInfos
+          case 4 => return Closed
         }
       }
     }
@@ -66,6 +73,7 @@ object State {
     state match {
       case Processing => s"${contentType}-warning"
       case Meeting => s"${contentType}-danger"
+      case MissingInfos => s"${contentType}-danger"
       case Closed => s"${contentType}-success"
       case _ => {
         contentType match {
@@ -91,6 +99,7 @@ object State {
       case Meeting => Html.apply("Um den Auftrag abschließen zu können, muss zuvor ein persönliches Gespräch erfolgen. Bitte wenden Sie " +
         s"sich für die Terminvereinbarung mit der o.g. Antragsnummer (<a href='/state/${appreciation.id}'>#${appreciation.id}</a>) an die Email-Adresse " +
         s"<a href='mailto:info@wasauchimmer.de'>info@wasauchimmer.de</a>.")
+      case MissingInfos => Html.apply("Um den Auftrag abschließen zu können, müssen die von Ihnen zur Verfügung gestellten Angaben überarbeitet werden.")
       case Closed => Html.apply(s"Ihr Auftrag wurde <strong>erfolgreich</strong> und ohne Probleme <strong>abgeschlossen</strong>. Die Noten wurden in Ihrem Notenkonto hinzugefügt.")
       case _ => Html.apply("")
     }

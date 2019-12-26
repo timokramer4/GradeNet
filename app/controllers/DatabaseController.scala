@@ -43,11 +43,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               matrNr INT(11) NOT NULL,
               university VARCHAR(255) NOT NULL,
               state INT(11) NOT NULL,
+              password VARCHAR(255) NOT NULL,
               course_id SERIAL REFERENCES ${coursesEntity}(id)
               );""").execute()
           success = SQL(
             s"""CREATE TABLE IF NOT EXISTS ${modulesEntity} (
-               id SERIAL PRIMARY KEY AUTO_INCREMENT,
+               id SERIAL PRIMARY KEY,
                name VARCHAR NOT NULL,
                semester INT(11) NOT NULL,
                course_id SERIAL REFERENCES ${coursesEntity}(id)
@@ -60,7 +61,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
           success =
             SQL(
               s"""CREATE TABLE IF NOT EXISTS ${userEntity} (
-              username VARCHAR(255) PRIMARY KEY,
+              id SERIAL PRIMARY KEY,
+              username VARCHAR(255) UNIQUE NOT NULL,
               password VARCHAR(255) NOT NULL,
               admin BOOLEAN NOT NULL
               );""").execute()
@@ -83,6 +85,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               matrNr INT NOT NULL,
               university VARCHAR NOT NULL,
               state INT NOT NULL,
+              password VARCHAR NOT NULL,
               course_id SERIAL REFERENCES ${coursesEntity}(id)
               );""").execute()
           success = SQL(
@@ -100,10 +103,11 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
           success =
             SQL(
               s"""CREATE TABLE IF NOT EXISTS "${userEntity}" (
-              username VARCHAR PRIMARY KEY,
+              id SERIAL PRIMARY KEY,
+              username VARCHAR UNIQUE NOT NULL,
               password VARCHAR NOT NULL,
               admin BOOLEAN NOT NULL
-              )""").execute()
+              );""").execute()
           success = SQL(
             s"""INSERT INTO "${userEntity}" (username, password, admin) VALUES ('admin', '52edc26fb9842cb6a77de4c2f27709d8a3d812545a5852ba9dbef35d10a7a5c5', TRUE) ON CONFLICT (username) DO NOTHING;""").execute()
       }
@@ -124,18 +128,18 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
    * @param course
    * @return
    */
-  def createAppreciation(firstName: String, lastName: String, email: String, matrNr: Int, university: String, course: Int): Long = {
+  def createAppreciation(firstName: String, lastName: String, email: String, matrNr: Int, passwordHash: String, university: String, course: Int): Long = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       var id: Option[Long] = Some(0)
       ConfigFactory.load().getString("db.default.driver") match {
         case "com.mysql.jdbc.Driver" => // MySQL
-          id = SQL(s"""INSERT INTO ${appreciationEntity} (firstName, lastName, email, matrNr, university, course_id, state) values ({firstName}, {lastName}, {email}, {matrNr}, {university}, {course}, 0)""")
-            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "course" -> course)
+          id = SQL(s"""INSERT INTO ${appreciationEntity} (firstName, lastName, email, matrNr, university, password, course_id, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {password}, {course}, 0)""")
+            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "password" -> passwordHash, "course" -> course)
             .executeInsert()
         case "org.postgresql.Driver" => // PostgreSQL
-          id = SQL(s"""INSERT INTO "${appreciationEntity}" (firstName, lastName, email, matrNr, university, course_id, state) values ({firstName}, {lastName}, {email}, {matrNr}, {university}, {course}, 0)""")
-            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "course" -> course)
+          id = SQL(s"""INSERT INTO "${appreciationEntity}" (firstName, lastName, email, matrNr, university, password, course_id, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {password}, {course}, 0)""")
+            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "password" -> passwordHash, "course" -> course)
             .executeInsert()
       }
       return id.getOrElse(0)
@@ -213,8 +217,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val parser: RowParser[Appreciation] =
-        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("course_id") ~ int("state") map {
-          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ course ~ state => Appreciation(id, fn, ln, mnr, email, uni, course, switchStateInt(state).asInstanceOf[State])
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ str("password") ~ int("course_id") ~ int("state") map {
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ password ~ course ~ state => Appreciation(id, fn, ln, mnr, email, uni, password, course, switchStateInt(state).asInstanceOf[State])
         }
 
       val result: List[Appreciation] = {
@@ -238,8 +242,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val parser: RowParser[Appreciation] = {
-        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("course_id") ~ int("state") map {
-          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ course ~ state => Appreciation(id, fn, ln, mnr, email, uni, course, switchStateInt(state).asInstanceOf[State])
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ str("password") ~ int("course_id") ~ int("state") map {
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ password ~ course ~ state => Appreciation(id, fn, ln, mnr, email, uni, password, course, switchStateInt(state).asInstanceOf[State])
         }
       }
 
@@ -755,6 +759,33 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   /** *************************
    ** USERS
    ** *************************/
+
+  /**
+   * Create new user
+   *
+   * @param username
+   * @param passwordHash
+   * @param admin
+   * @return
+   */
+  def createUser(username: String, passwordHash: String, admin: Boolean): Long = {
+    checkDBIntegrity()
+    db.withConnection {
+      implicit c =>
+        var id: Option[Long] = Some(0)
+        ConfigFactory.load().getString("db.default.driver") match {
+          case "com.mysql.jdbc.Driver" => // MySQL
+            id = SQL(s"""INSERT INTO ${userEntity} (username, password, admin) values ({username}, {password}, {admin})""")
+              .on("username" -> username, "password" -> passwordHash, "admin" -> admin)
+              .executeInsert()
+          case "org.postgresql.Driver" => // PostgreSQL
+            id = SQL(s"""INSERT INTO "${userEntity}" (username, password, admin) values ({username}, {password}, {admin})""")
+              .on("username" -> username, "password" -> passwordHash, "admin" -> admin)
+              .executeInsert()
+        }
+        return id.getOrElse(0)
+    }
+  }
 
   /**
    * Get specific user from database

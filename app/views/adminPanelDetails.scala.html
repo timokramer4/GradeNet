@@ -1,5 +1,5 @@
 @import java.io.File
-@(appreciation: Appreciation, files: List[File], stateList: List[Int], moduleList: List[Module])(implicit requestHeader: RequestHeader, pageTitle: String = "Antrag", flash: Flash)
+@(appreciation: Appreciation, files: List[File], stateList: List[Int], moduleList: List[Module])(implicit session: Session, requestHeader: RequestHeader, pageTitle: String = "Antrag", flash: Flash)
 
     @import models.State._
     @import models.Appreciation._
@@ -21,11 +21,13 @@
         <div class="col-lg-12">
                 <!-- Page content -->
             <div class="input-group mb-2 align-items-center">
-                <div class='btn-toolbar pull-left' style="margin-right: 1em;">
-                    <a href="@routes.HomeController.adminPanel" class="btn btn-primary" role="button">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                </div>
+                @if(session.get("admin")) {
+                    <div class='btn-toolbar pull-left' style="margin-right: 1em;">
+                        <a href="@routes.HomeController.adminPanel" class="btn btn-primary" role="button">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </div>
+                }
                 <h1 class="mr-3">@pageTitle #@getString(appreciation, "id")</h1>
                 <h5>(<i class="@stateColor(getState(appreciation), "text")">@stateToString(getState(appreciation))</i>)</h5>
             </div>
@@ -73,7 +75,7 @@
                         </tr>
                         <tr>
                             <th scope="row">Email</th>
-                            <td>@getString(appreciation, "email")</td>
+                            <td><a href='mailto:@getString(appreciation, "email")'>@getString(appreciation, "email")</a></td>
                         </tr>
                         <tr>
                             <th scope="row">Hochschule/Uni</th>
@@ -101,16 +103,21 @@
                         <tr>
                             <th scope="row">Status</th>
                             <td>
-                                <form action="@routes.HomeController.adminPanelDetailsChangeState(getId(appreciation))" method="POST" class="form-inline">
-                                    @helper.CSRF.formField
-                                <select class="custom-select m-1" id="state" name="state">
-                                @for(state <- stateList) {
-                                    <option value="@state"
-                                    @if(state == switchStateInt(getState(appreciation)).asInstanceOf[Int]) {selected}>@stateToString(state) </option>
+                                @if(session.get("admin")) {
+                                    <form action="@routes.HomeController.adminPanelDetailsChangeState(getId(appreciation))" method="POST" class="form-inline">
+                                        @helper.CSRF.formField
+                                        <select class="custom-select m-1" id="state" name="state">
+                                        @for(state <- stateList) {
+                                            <option value="@state"
+                                            @if(state == switchStateInt(getState(appreciation)).asInstanceOf[Int]) {selected}>@stateToString(state) </option>
+                                        }
+                                        </select>
+                                        <button type="submit" class="btn btn-primary">Speichern</button>
+                                    </form>
+                                } else {
+                                    <strong class="@stateColor(appreciation.state, "text")">@getString(appreciation, "state")</strong>
+                                            <p>@getDescription(appreciation)</p>
                                 }
-                                </select>
-                                <button type="submit" class="btn btn-primary">Speichern</button>
-                                </form>
                             </td>
                         </tr>
                     </tbody>

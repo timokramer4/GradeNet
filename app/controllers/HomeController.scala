@@ -159,7 +159,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         }
         // Success: If all data correct
         else {
-          Redirect(routes.HomeController.appreciationSingle).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
+          Redirect(routes.HomeController.showCurrentState(petitionId.toInt)).withSession((s"appreciation${petitionId}", petitionId.toString)).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
         }
       }
     )
@@ -221,7 +221,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
               file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/Notenkonto.$fileType"), replace = false)
 
               // Redirect and show success alert after successfully transfer all form data
-              Redirect(routes.HomeController.appreciationAll).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
+              Redirect(routes.HomeController.showCurrentState(petitionId.toInt)).withSession((s"appreciation${petitionId}", petitionId.toString)).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
             } else {
               Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Es sind nur PDF-Dateien als Anhang erlaubt! Bitte laden Sie Ihr Notenkonto als PDF Datei hoch!")
             }

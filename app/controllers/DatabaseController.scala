@@ -43,6 +43,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               matrNr INT(11) NOT NULL,
               university VARCHAR(255) NOT NULL,
               state INT(11) NOT NULL,
+              currentpo INT(11),
+              newpo INT(11),
               password VARCHAR(255) NOT NULL,
               course_id SERIAL REFERENCES ${coursesEntity}(id)
               );""").execute()
@@ -85,6 +87,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               matrNr INT NOT NULL,
               university VARCHAR NOT NULL,
               state INT NOT NULL,
+              currentpo INT,
+              newpo INT,
               password VARCHAR NOT NULL,
               course_id SERIAL REFERENCES ${coursesEntity}(id)
               );""").execute()
@@ -128,18 +132,18 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
    * @param course
    * @return
    */
-  def createAppreciation(firstName: String, lastName: String, email: String, matrNr: Int, passwordHash: String, university: String, course: Int): Long = {
+  def createAppreciation(firstName: String, lastName: String, email: String, matrNr: Int, university: String, currentPO: Option[Int], newPO: Option[Int], passwordHash: String, course: Int): Long = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       var id: Option[Long] = Some(0)
       ConfigFactory.load().getString("db.default.driver") match {
         case "com.mysql.jdbc.Driver" => // MySQL
-          id = SQL(s"""INSERT INTO ${appreciationEntity} (firstName, lastName, email, matrNr, university, password, course_id, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {password}, {course}, 0)""")
-            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "password" -> passwordHash, "course" -> course)
+          id = SQL(s"""INSERT INTO ${appreciationEntity} (firstName, lastName, email, matrNr, university, currentpo, newpo, password, course_id, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {currentPO}, {newPO}, {password}, {course}, 0)""")
+            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "currentPO" -> currentPO.get, "newPO"-> newPO.get, "password" -> passwordHash, "course" -> course)
             .executeInsert()
         case "org.postgresql.Driver" => // PostgreSQL
-          id = SQL(s"""INSERT INTO "${appreciationEntity}" (firstName, lastName, email, matrNr, university, password, course_id, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {password}, {course}, 0)""")
-            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "password" -> passwordHash, "course" -> course)
+          id = SQL(s"""INSERT INTO "${appreciationEntity}" (firstName, lastName, email, matrNr, university, currentpo, newpo, password, course_id, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {currentPO}, {newPO}, {password}, {course}, 0)""")
+            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "currentPO" -> currentPO.get, "newPO"-> newPO.get, "password" -> passwordHash, "course" -> course)
             .executeInsert()
       }
       return id.getOrElse(0)
@@ -217,8 +221,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val parser: RowParser[Appreciation] =
-        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ str("password") ~ int("course_id") ~ int("state") map {
-          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ password ~ course ~ state => Appreciation(id, fn, ln, mnr, email, uni, password, course, switchStateInt(state).asInstanceOf[State])
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("currentPO") ~ int("newPO") ~ str("password") ~ int("course_id") ~ int("state") map {
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ currentPO ~ newPO ~ password ~ course ~ state => Appreciation(id, fn, ln, mnr, email, uni, currentPO, newPO, password, course, switchStateInt(state).asInstanceOf[State])
         }
 
       val result: List[Appreciation] = {
@@ -242,8 +246,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val parser: RowParser[Appreciation] = {
-        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ str("password") ~ int("course_id") ~ int("state") map {
-          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ password ~ course ~ state => Appreciation(id, fn, ln, mnr, email, uni, password, course, switchStateInt(state).asInstanceOf[State])
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("currentPO") ~ int("newPO") ~ str("password") ~ int("course_id") ~ int("state") map {
+          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ currentPO ~ newPO ~ password ~ course ~ state => Appreciation(id, fn, ln, mnr, email, uni, currentPO, newPO, password, course, switchStateInt(state).asInstanceOf[State])
         }
       }
 

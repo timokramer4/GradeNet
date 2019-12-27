@@ -2,17 +2,19 @@ package models
 
 import models.State.stateToString
 
-case class Appreciation(id: Int, firstName: String, lastName: String, matrNr: Int, email: String, university: String, password: String, course: Int, state: State)
+case class Appreciation(id: Int, firstName: String, lastName: String, matrNr: Int, email: String, university: String, currentPO: Int, newPO: Int, password: String, course: Int, state: State)
 
 object Appreciation {
   def getString(student: Appreciation, key: String): String = {
     key match {
-      case "id" => student.id.toString()
+      case "id" => student.id.toString
       case "firstName" => student.firstName
       case "lastName" => student.lastName
-      case "matrNr" => student.matrNr.toString()
+      case "matrNr" => student.matrNr.toString
       case "email" => student.email
       case "university" => student.university
+      case "currentPO" => student.currentPO.toString
+      case "newPO" => student.newPO.toString
       case "password" => student.password
       case "state" => {
         stateToString(student.state)

@@ -11,7 +11,9 @@ object AppreciationForm {
                   email: String,
                   matrNr: Int,
                   course: Int,
-                  university: String
+                  university: String,
+                  currentPO: Int,
+                  newPO: Int
                 )
 
   case class Single(
@@ -43,7 +45,9 @@ object AppreciationForm {
       "email" -> email,
       "matrNr" -> number(min = 100000, max = 999999),
       "course" -> number,
-      "university" -> nonEmptyText
+      "university" -> nonEmptyText,
+      "currentPO" -> number,
+      "newPO" -> number
     )(All.apply)(All.unapply)
   )
 }

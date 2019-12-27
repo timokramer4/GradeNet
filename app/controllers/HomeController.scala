@@ -94,7 +94,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
                   // Create new appreciation in database
                   val randomPassword = generateRandomPassword()
-                  petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, generateHash(randomPassword, false), successForm.university, successForm.course)
+                  petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, None, None, generateHash(randomPassword, false), successForm.course)
 
                   // Remove existing directory recursive
                   if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
@@ -206,7 +206,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
               // Create new appreciation in database
               val randomPassword = generateRandomPassword()
               println(randomPassword)
-              petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, generateHash(randomPassword, false), successForm.university, successForm.course)
+              petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, Some(successForm.currentPO), Some(successForm.newPO), generateHash(randomPassword, false), successForm.course)
 
               // Remove existing directory recursive
               if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {

@@ -111,6 +111,13 @@
                             Symbol("_showConstraints") -> false,
                             Symbol("_label") -> "Modul",
                             Symbol("required") -> "")
+                        @helper.inputText(aFormSingle("appreciationName[]"),
+                            Symbol("_class") -> "form-group",
+                            Symbol("class") -> "form-control",
+                            Symbol("_showConstraints") -> false,
+                            Symbol("_label") -> "Modulname",
+                            Symbol("placeholder") -> "Modulname",
+                            Symbol("required") -> "")
                         <div class="form-group">
                             <label>Modulbeschreibung</label>
                             <div class="input-group mb-3">
@@ -134,6 +141,11 @@
         }
 
         <script>
+                /* Set initial default course at start */
+                var courseId = 1;
+                appendModules()
+
+                /* Append new module */
                 $('#addModule').on("click", function () {
                     // Append first module card remove button
                     if ($('.card-header').length == 1 && $('.row.align-items-center')[0].childElementCount < 2) {
@@ -163,6 +175,13 @@
                             Symbol("_showConstraints") -> false,
                             Symbol("_label") -> "Modul",
                             Symbol("required") -> "")
+                        @helper.inputText(aFormSingle("appreciationName[]"),
+                            Symbol("_class") -> "form-group",
+                            Symbol("class") -> "form-control",
+                            Symbol("_showConstraints") -> false,
+                            Symbol("_label") -> "Modulname",
+                            Symbol("placeholder") -> "Modulname",
+                            Symbol("required") -> "")
                         <div class="form-group">
                             <label>Modulbeschreibung</label>
                             <div class="input-group mb-3">
@@ -179,9 +198,10 @@
                         </div>
                     </div>`;
                     cardHolder.append(card);
+                    appendModules();
                 });
 
-                // Remove module click event
+                /* Remove module click event */
                 $('body').on("click", 'button#removeModuleBtn', function (event) {
                     event.stopPropagation();
                     event.stopImmediatePropagation();
@@ -193,6 +213,23 @@
                         }
                     }
                 });
+
+                /* Change course trigger event */
+                $('[id="course"]').on('change', function () {
+                    courseId = $(this).val();
+                    appendModules();
+                });
+
+                /* Refresh module list dynamically depending on selected course */
+                function appendModules() {
+                    var moduleSelect = $('[id="modules_"]');
+                    $.getJSON(`/modules/${courseId}`, function (data) {
+                        moduleSelect.empty();
+                        $.each(data, function (key, val) {
+                            moduleSelect.append(`<option value="${val.id}">${val.name}</option>`);
+                        });
+                    });
+                }
         </script>
     </div>
 </div>

@@ -2,7 +2,7 @@ package models
 
 import models.State.stateToString
 
-case class Appreciation(id: Int, firstName: String, lastName: String, matrNr: Int, email: String, university: String, currentPO: Int, newPO: Int, password: String, course: Int, state: State)
+case class Appreciation(id: Int, firstName: String, lastName: String, matrNr: Int, email: String, university: String, currentPO: Option[Int], newPO: Option[Int], password: String, course: Int, state: State)
 
 object Appreciation {
   def getString(student: Appreciation, key: String): String = {
@@ -13,8 +13,8 @@ object Appreciation {
       case "matrNr" => student.matrNr.toString
       case "email" => student.email
       case "university" => student.university
-      case "currentPO" => student.currentPO.toString
-      case "newPO" => student.newPO.toString
+      case "currentPO" => student.currentPO.getOrElse("0").toString
+      case "newPO" => student.newPO.getOrElse("0").toString
       case "password" => student.password
       case "state" => {
         stateToString(student.state)

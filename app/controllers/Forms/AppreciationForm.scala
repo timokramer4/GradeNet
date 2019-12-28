@@ -23,7 +23,8 @@ object AppreciationForm {
                      matrNr: Int,
                      university: String,
                      course: Int,
-                     modules: List[Int]
+                     modules: List[Int],
+                     appreciationModules: List[String]
                    )
 
   val aFormSingle = Form(
@@ -34,7 +35,8 @@ object AppreciationForm {
       "matrNr" -> number(min = 100000, max = 999999),
       "university" -> nonEmptyText,
       "course" -> number,
-      "modules" -> list(number)
+      "modules" -> list(number),
+      "appreciationName" -> list(nonEmptyText)
     )(Single.apply)(Single.unapply)
   )
 

@@ -58,7 +58,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
           success = SQL(
             s"""CREATE TABLE IF NOT EXISTS "${appreciationModulesEntity}" (
                appreciation_id SERIAL REFERENCES ${appreciationEntity}(id),
-               module_id SERIAL REFERENCES ${modulesEntity}(id)
+               module_id SERIAL REFERENCES ${modulesEntity}(id),
+               appreciationname VARCHAR(255) NOT NULL
                );""").execute()
           success =
             SQL(
@@ -102,7 +103,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
           success = SQL(
             s"""CREATE TABLE IF NOT EXISTS "${appreciationEntity}_${modulesEntity}" (
                appreciation_id SERIAL REFERENCES ${appreciationEntity}(id),
-               module_id SERIAL REFERENCES ${modulesEntity}(id)
+               module_id SERIAL REFERENCES ${modulesEntity}(id),
+               appreciationname VARCHAR NOT NULL
                );""").execute()
           success =
             SQL(
@@ -119,11 +121,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   }
 
   /** *************************
-   ** APPRECIATIONS
-   ** *************************/
+   * * APPRECIATIONS
+   * * *************************/
 
   /**
    * Create new appreciation in database
+   *
    * @param firstName
    * @param lastName
    * @param email
@@ -138,13 +141,25 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       var id: Option[Long] = Some(0)
       ConfigFactory.load().getString("db.default.driver") match {
         case "com.mysql.jdbc.Driver" => // MySQL
-          id = SQL(s"""INSERT INTO ${appreciationEntity} (firstName, lastName, email, matrNr, university, currentpo, newpo, password, course_id, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {currentPO}, {newPO}, {password}, {course}, 0)""")
-            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "currentPO" -> currentPO.get, "newPO"-> newPO.get, "password" -> passwordHash, "course" -> course)
-            .executeInsert()
+          if (currentPO == None && newPO == None) {
+            id = SQL(s"""INSERT INTO ${appreciationEntity} (firstName, lastName, email, matrNr, university, password, course_id, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {password}, {course}, 0)""")
+              .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "password" -> passwordHash, "course" -> course)
+              .executeInsert()
+          } else {
+            id = SQL(s"""INSERT INTO ${appreciationEntity} (firstName, lastName, email, matrNr, university, currentpo, newpo, password, course_id, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {currentPO}, {newPO}, {password}, {course}, 0)""")
+              .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "currentPO" -> currentPO.get, "newPO" -> newPO.get, "password" -> passwordHash, "course" -> course)
+              .executeInsert()
+          }
         case "org.postgresql.Driver" => // PostgreSQL
-          id = SQL(s"""INSERT INTO "${appreciationEntity}" (firstName, lastName, email, matrNr, university, currentpo, newpo, password, course_id, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {currentPO}, {newPO}, {password}, {course}, 0)""")
-            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "currentPO" -> currentPO.get, "newPO"-> newPO.get, "password" -> passwordHash, "course" -> course)
-            .executeInsert()
+          if (currentPO == None && newPO == None) {
+            id = SQL(s"""INSERT INTO "${appreciationEntity}" (firstName, lastName, email, matrNr, university, password, course_id, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {password}, {course}, 0)""")
+              .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "password" -> passwordHash, "course" -> course)
+              .executeInsert()
+          } else {
+            id = SQL(s"""INSERT INTO "${appreciationEntity}" (firstName, lastName, email, matrNr, university, currentpo, newpo, password, course_id, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {currentPO}, {newPO}, {password}, {course}, 0)""")
+              .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "currentPO" -> currentPO.get, "newPO" -> newPO.get, "password" -> passwordHash, "course" -> course)
+              .executeInsert()
+          }
       }
       return id.getOrElse(0)
     }
@@ -152,6 +167,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Change state of existing appreciation
+   *
    * @param id
    * @param state
    * @return
@@ -174,6 +190,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Remove specific appreciation
+   *
    * @param id
    * @param decrement
    */
@@ -215,13 +232,14 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Get all appreciations
+   *
    * @return
    */
   def getAllAppreciations(): List[Appreciation] = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val parser: RowParser[Appreciation] =
-        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("currentPO") ~ int("newPO") ~ str("password") ~ int("course_id") ~ int("state") map {
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ get[Option[Int]]("currentpo") ~ get[Option[Int]]("newpo") ~ str("password") ~ int("course_id") ~ int("state") map {
           case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ currentPO ~ newPO ~ password ~ course ~ state => Appreciation(id, fn, ln, mnr, email, uni, currentPO, newPO, password, course, switchStateInt(state).asInstanceOf[State])
         }
 
@@ -239,6 +257,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Get single appreciation
+   *
    * @param id
    * @return
    */
@@ -246,7 +265,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val parser: RowParser[Appreciation] = {
-        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("currentPO") ~ int("newPO") ~ str("password") ~ int("course_id") ~ int("state") map {
+        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ get[Option[Int]]("currentpo") ~ get[Option[Int]]("newpo") ~ str("password") ~ int("course_id") ~ int("state") map {
           case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ currentPO ~ newPO ~ password ~ course ~ state => Appreciation(id, fn, ln, mnr, email, uni, currentPO, newPO, password, course, switchStateInt(state).asInstanceOf[State])
         }
       }
@@ -265,20 +284,21 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Append module to created appreciation
+   *
    * @param aId
    * @param mId
    * @return
    */
-  def appendModuleToAppreciation(aId: Long, mId: Int): Long = {
+  def appendModuleToAppreciation(aId: Long, mId: Int, appreciationName: String): Long = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       var id: Option[Long] = Some(0)
       ConfigFactory.load().getString("db.default.driver") match {
         case "com.mysql.jdbc.Driver" => // MySQL
-          id = SQL(s"""INSERT INTO ${appreciationModulesEntity} (appreciation_id, module_id) values (${aId}, ${mId})""")
+          id = SQL(s"""INSERT INTO ${appreciationModulesEntity} (appreciation_id, module_id, appreciationname) values (${aId}, ${mId}, '${appreciationName}')""")
             .executeInsert()
         case "org.postgresql.Driver" => // PostgreSQL
-          id = SQL(s"""INSERT INTO "${appreciationModulesEntity}" (appreciation_id, module_id) values (${aId}, ${mId})""")
+          id = SQL(s"""INSERT INTO "${appreciationModulesEntity}" (appreciation_id, module_id, appreciationname) values (${aId}, ${mId}, '${appreciationName}')""")
             .executeInsert()
       }
       return id.getOrElse(0)
@@ -287,6 +307,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Get selected modules in appreciation
+   *
    * @param id
    * @return
    */
@@ -295,8 +316,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     db.withConnection {
       implicit c =>
         val parser: RowParser[Module] = {
-          int("id") ~ str("name") ~ int("semester") ~ int("course_id") map {
-            case id ~ name ~ semester ~ course => Module(id, name, semester, course)
+          int("id") ~ str("name") ~ get[Option[String]]("appreciationName") ~ int("semester") ~ int("course_id") map {
+            case id ~ name ~ appreciationName ~ semester ~ course => Module(id, name, appreciationName, semester, course)
           }
         }
 
@@ -351,11 +372,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   }
 
   /** *************************
-   ** COURSES
-   ** *************************/
+   * * COURSES
+   * * *************************/
 
   /**
    * Create new course entry
+   *
    * @param name
    * @param gradiation
    * @param semester
@@ -388,6 +410,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Edit course
+   *
    * @param course
    * @return
    */
@@ -430,6 +453,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Remove course
+   *
    * @param id
    * @return
    */
@@ -458,6 +482,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Get single course from database
+   *
    * @param id
    * @return
    */
@@ -495,6 +520,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Get all courses from database
+   *
    * @return
    */
   def getAllCourses(): List[Course] = {
@@ -534,11 +560,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   }
 
   /** *************************
-   ** MODULES
-   ** *************************/
+   * * MODULES
+   * * *************************/
 
   /**
    * Create new module
+   *
    * @param name
    * @param semester
    * @param course
@@ -571,6 +598,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Edit existing module
+   *
    * @param module
    * @return
    */
@@ -593,6 +621,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Remove specific module
+   *
    * @param id
    * @return
    */
@@ -636,6 +665,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Get single module
+   *
    * @param id
    * @return
    */
@@ -645,7 +675,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       implicit c =>
         val parser: RowParser[Module] = {
           int("id") ~ str("name") ~ int("semester") ~ int("course_id") map {
-            case id ~ name ~ semester ~ course => Module(id, name, semester, course)
+            case id ~ name ~ semester ~ course => Module(id, name, None, semester, course)
           }
         }
 
@@ -670,6 +700,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Get all modules from database
+   *
    * @param courseId
    * @return
    */
@@ -679,7 +710,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       implicit c =>
         val parser: RowParser[Module] = {
           int("id") ~ str("name") ~ int("semester") ~ int("course_id") map {
-            case id ~ name ~ semester ~ course => Module(id, name, semester, course)
+            case id ~ name ~ semester ~ course => Module(id, name, None, semester, course)
           }
         }
 
@@ -711,6 +742,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Convert module list from int to module list
+   *
    * @param intList
    * @return
    */
@@ -720,7 +752,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       implicit c =>
         val parser: RowParser[Module] = {
           int("id") ~ str("name") ~ int("semester") ~ int("course_id") map {
-            case id ~ name ~ semester ~ course => Module(id, name, semester, course)
+            case id ~ name ~ semester ~ course => Module(id, name, None, semester, course)
           }
         }
 
@@ -729,23 +761,23 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
           ConfigFactory.load().getString("db.default.driver") match {
             case "com.mysql.jdbc.Driver" => { // MySQL
               intList.foreach(moduleId =>
-                moduleList = SQL(
+                moduleList = moduleList :+ SQL(
                   s"""SELECT * FROM ${
                     modulesEntity
                   } WHERE id = ${
                     moduleId
-                  }""").as(parser.single) :: moduleList
+                  }""").as(parser.single)
               )
             }
             case "org.postgresql.Driver" => { // PostgreSQL
               intList.foreach {
                 moduleId =>
-                  moduleList = SQL(
+                  moduleList = moduleList :+ SQL(
                     s"""SELECT * FROM "${
                       modulesEntity
                     }" WHERE id = ${
                       moduleId
-                    }""").as(parser.single) :: moduleList
+                    }""").as(parser.single)
               }
             }
           }
@@ -761,8 +793,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   }
 
   /** *************************
-   ** USERS
-   ** *************************/
+   * * USERS
+   * * *************************/
 
   /**
    * Create new user
@@ -793,6 +825,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
 
   /**
    * Get specific user from database
+   *
    * @param username
    * @return
    */

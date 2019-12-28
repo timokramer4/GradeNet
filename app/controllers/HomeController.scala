@@ -11,7 +11,7 @@ import controllers.Forms.LoginForm._
 import javax.inject._
 import models.State._
 import models.{Appreciation, Course, Module, User}
-import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json, Writes}
 import play.api.mvc.{Action, AnyContent, _}
 import controllers.Hasher._
 
@@ -60,6 +60,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def appreciationSinglePost = Action(parse.multipartFormData) { implicit request =>
     aFormSingle.bindFromRequest.fold(
       errorForm => {
+        println(errorForm.errors.toList)
         Redirect(routes.HomeController.appreciationSingle).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
       },
       successForm => {
@@ -116,7 +117,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
               else {
                 if (fileType == "pdf") {
                   // Create module instance
-                  dbController.appendModuleToAppreciation(petitionId, moduleList(i - 1).id)
+                  dbController.appendModuleToAppreciation(petitionId, moduleList(i - 1).id, successForm.appreciationModules(i - 1))
 
                   // Upload file in new directory
                   file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/${moduleList(i - 1).name}.$fileType"), replace = false)
@@ -589,7 +590,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
           },
           successForm => {
             // Edit database entry
-            dbController.editModule(Module(moduleId, successForm.name, successForm.semester, courseId))
+            dbController.editModule(Module(moduleId, successForm.name, None, successForm.semester, courseId))
 
             // Redirect after success
             Redirect(routes.HomeController.adminPanelSingleCourse(courseId)).flashing("success" ->
@@ -656,6 +657,21 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   /** *************************
    * * HELPER FUNCTIONS
    * * *************************/
+
+  implicit val moduleWrites = new Writes[Module] {
+    def writes(module: Module) = Json.obj(
+      "id" -> module.id,
+      "name" -> module.name,
+      "semester" -> module.semester,
+      "course" -> module.course
+    )
+  }
+
+  def getModulesAsJson(id: Int) = Action { implicit request =>
+    import play.api.libs.json._
+    val courseModuleList = dbController.getAllModules(id)
+    Ok(Json.toJson(courseModuleList))
+  }
 
   /**
    * Convert JSON Array in (value, content) pair for select field

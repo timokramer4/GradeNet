@@ -8,6 +8,7 @@ POST    /appreciationSingle                                                 cont
 GET     /appreciationAll                                                    controllers.HomeController.appreciationAll
 POST    /appreciationAll                                                    controllers.HomeController.appreciationAllPost
 GET     /state/$id<[0-9]+>                                                  controllers.HomeController.showCurrentState(id: Int)
+GET     /modules/$id<[0-9]+>                                                controllers.HomeController.getModulesAsJson(id: Int)
 
 # Login and logout
 GET     /auth/$id<[0-9]+>                                                   controllers.HomeController.stateLogin(id: Int)

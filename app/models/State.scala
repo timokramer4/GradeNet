@@ -86,7 +86,7 @@ object State {
 
   def getStateList(): List[Int] = {
     var stateList: List[Int] = Nil
-    for (i <- 0 to 3) {
+    for (i <- 0 to 4) {
       stateList = List(i).:::(stateList)
     }
     return stateList

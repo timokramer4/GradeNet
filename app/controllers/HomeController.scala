@@ -61,6 +61,12 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
    * @return
    */
   def home(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    val t = new Thread(new Runnable {
+      def run() = {
+        println("hello world")
+      }
+    })
+    t.start()
     Ok(views.html.main("Startseite", views.html.home()))
   }
 
@@ -186,17 +192,21 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         }
         // Success: If all data correct
         else {
-          sendEmail(
-            s"Antrag #${petitionId} eigegangen",
-            successForm.email,
-            successForm.firstName,
-            successForm.lastName,
-            s"",
-            s"<html><body><p><b>Hallo ${successForm.firstName} ${successForm.lastName},</b><br>Ihr Antrag zur Notenanerkennung ist bei uns eingenagngen " +
-              s"und wird so schnell wie möglich bearbeitet. Den Status Ihres Antrags können Sie mit folgenden Zugangsdaten einsehen:</p>" +
-              s"<p><b>Link:</b> <a href='${rootAddress}${routes.HomeController.showCurrentState(petitionId.toInt)}'>${rootAddress}${routes.HomeController.showCurrentState(petitionId.toInt)}</a><br>" +
-              s"<b>Passwort:</b> <code>${randomPassword}</code></p>" +
-              s"<p><b>Mit freundlichen Grüßen<br>GradeNet</b></p></html><body>")
+          new Thread(new Runnable {
+            def run() = {
+              sendEmail(
+                s"Antrag #${petitionId} eigegangen",
+                successForm.email,
+                successForm.firstName,
+                successForm.lastName,
+                s"",
+                s"<html><body><p><b>Hallo ${successForm.firstName} ${successForm.lastName},</b><br>Ihr Antrag zur Notenanerkennung ist bei uns eingenagngen " +
+                  s"und wird so schnell wie möglich bearbeitet. Den Status Ihres Antrags können Sie mit folgenden Zugangsdaten einsehen:</p>" +
+                  s"<p><b>Link:</b> <a href='${rootAddress}${routes.HomeController.showCurrentState(petitionId.toInt)}'>${rootAddress}${routes.HomeController.showCurrentState(petitionId.toInt)}</a><br>" +
+                  s"<b>Passwort:</b> <code>${randomPassword}</code></p>" +
+                  s"<p><b>Mit freundlichen Grüßen<br>GradeNet</b></p></html><body>")
+            }
+          }).start()
           Redirect(routes.HomeController.showCurrentState(petitionId.toInt)).withSession((s"appreciation${petitionId}", petitionId.toString)).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
         }
       }
@@ -259,17 +269,21 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
               file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/Notenkonto.$fileType"), replace = false)
 
               // Send mail
-              sendEmail(
-                s"Antrag #${petitionId} eigegangen",
-                successForm.email,
-                successForm.firstName,
-                successForm.lastName,
-                s"",
-                s"<html><body><p><b>Hallo ${successForm.firstName} ${successForm.lastName},</b><br>Ihr Antrag zur Notenanerkennung ist bei uns eingenagngen " +
-                  s"und wird so schnell wie möglich bearbeitet. Den Status Ihres Antrags können Sie mit folgenden Zugangsdaten einsehen:</p>" +
-                  s"<p><b>Link:</b> <a href='${rootAddress}${routes.HomeController.showCurrentState(petitionId.toInt)}'>${rootAddress}${routes.HomeController.showCurrentState(petitionId.toInt)}</a><br>" +
-                  s"<b>Passwort:</b> <code>${randomPassword}</code></p>" +
-                  s"<p><b>Mit freundlichen Grüßen<br>GradeNet</b></p></html><body>")
+              new Thread(new Runnable {
+                def run() = {
+                  sendEmail(
+                    s"Antrag #${petitionId} eigegangen",
+                    successForm.email,
+                    successForm.firstName,
+                    successForm.lastName,
+                    s"",
+                    s"<html><body><p><b>Hallo ${successForm.firstName} ${successForm.lastName},</b><br>Ihr Antrag zur Notenanerkennung ist bei uns eingenagngen " +
+                      s"und wird so schnell wie möglich bearbeitet. Den Status Ihres Antrags können Sie mit folgenden Zugangsdaten einsehen:</p>" +
+                      s"<p><b>Link:</b> <a href='${rootAddress}${routes.HomeController.showCurrentState(petitionId.toInt)}'>${rootAddress}${routes.HomeController.showCurrentState(petitionId.toInt)}</a><br>" +
+                      s"<b>Passwort:</b> <code>${randomPassword}</code></p>" +
+                      s"<p><b>Mit freundlichen Grüßen<br>GradeNet</b></p></html><body>")
+                }
+              }).start()
 
               // Redirect and show success alert after successfully transfer all form data
               Redirect(routes.HomeController.showCurrentState(petitionId.toInt)).withSession((s"appreciation${petitionId}", petitionId.toString)).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
@@ -462,15 +476,19 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
             dbController.changeAppreciationState(id, successForm.state)
 
             // Send mail
-            sendEmail(
-              s"Statusänderungen Antrag #${appreciationData.id}",
-              appreciationData.email,
-              appreciationData.firstName,
-              appreciationData.lastName,
-              s"",
-              s"<html><body><p><b>Hallo ${appreciationData.firstName} ${appreciationData.lastName},</b><br>" +
-                s"""der Status Ihres Antrags #${appreciationData.id} wurde auf "<b>${stateToString(successForm.state)}</b>" geändert!</p>""" +
-                s"<p><b>Mit freundlichen Grüßen<br>GradeNet</b></p></html><body>")
+            new Thread(new Runnable {
+              def run() = {
+                sendEmail(
+                  s"Statusänderungen Antrag #${appreciationData.id}",
+                  appreciationData.email,
+                  appreciationData.firstName,
+                  appreciationData.lastName,
+                  s"",
+                  s"<html><body><p><b>Hallo ${appreciationData.firstName} ${appreciationData.lastName},</b><br>" +
+                    s"""der Status Ihres Antrags #${appreciationData.id} wurde auf "<b>${stateToString(successForm.state)}</b>" geändert!</p>""" +
+                    s"<p><b>Mit freundlichen Grüßen<br>GradeNet</b></p></html><body>")
+              }
+            }).start()
 
             // Redirect after change and show changes
             Redirect(routes.HomeController.adminPanelDetails(id)).flashing("success" ->

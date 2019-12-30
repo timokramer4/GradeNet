@@ -14,6 +14,7 @@ import models.{Appreciation, Course, Module, User}
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json, Writes}
 import play.api.mvc.{Action, AnyContent, _}
 import controllers.Hasher._
+import play.api.libs.mailer.{Email, MailerClient}
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.io.Directory
@@ -24,11 +25,35 @@ import scala.reflect.io.Directory
  */
 
 @Singleton
-class HomeController @Inject()(dbController: DatabaseController, cc: ControllerComponents) extends AbstractController(cc) with play.api.i18n.I18nSupport {
+class HomeController @Inject()(dbController: DatabaseController, cc: ControllerComponents, mailerClient: MailerClient) extends AbstractController(cc) with play.api.i18n.I18nSupport {
 
   // Define default upload parameters
   var tmpUploadDir: Path = _
   val uploadDir: String = "uploads"
+  val rootAddress: String = "http://localhost:9000"
+
+  /**
+   * Send mail
+   *
+   * @param subject
+   * @param receiverMail
+   * @param receiverFirstName
+   * @param receiverLastName
+   * @param txtMsg
+   * @param htmlMsg
+   * @return
+   */
+  def sendEmail(subject: String, receiverMail: String, receiverFirstName: String, receiverLastName: String, txtMsg: String, htmlMsg: String) = {
+    val email = Email(
+      subject,
+      "GradeNet <gradenet@timoskramkiste.de>",
+      Seq(s"${receiverFirstName} ${receiverLastName} <${receiverMail}>"),
+
+      bodyText = Some(txtMsg),
+      bodyHtml = Some(htmlMsg)
+    )
+    mailerClient.send(email)
+  }
 
   /**
    * GET: Landing page
@@ -67,6 +92,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         var i: Int = 0
         var firstFile: Boolean = true
         var petitionId: Long = 0
+        var randomPassword: String = ""
         object State {
           val SUCCESS = 0
           val MISSING_FILES = 1
@@ -94,7 +120,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
                   }
 
                   // Create new appreciation in database
-                  val randomPassword = generateRandomPassword()
+                  randomPassword = generateRandomPassword(None)
                   petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, None, None, generateHash(randomPassword, false), successForm.course)
 
                   // Remove existing directory recursive
@@ -160,6 +186,17 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         }
         // Success: If all data correct
         else {
+          sendEmail(
+            s"Antrag #${petitionId} eigegangen",
+            successForm.email,
+            successForm.firstName,
+            successForm.lastName,
+            s"",
+            s"<html><body><p><b>Hallo ${successForm.firstName} ${successForm.lastName},</b><br>Ihr Antrag zur Notenanerkennung ist bei uns eingenagngen " +
+              s"und wird so schnell wie möglich bearbeitet. Den Status Ihres Antrags können Sie mit folgenden Zugangsdaten einsehen:</p>" +
+              s"<p><b>Link:</b> <a href='${rootAddress}${routes.HomeController.showCurrentState(petitionId.toInt)}'>${rootAddress}${routes.HomeController.showCurrentState(petitionId.toInt)}</a><br>" +
+              s"<b>Passwort:</b> <code>${randomPassword}</code></p>" +
+              s"<p><b>Mit freundlichen Grüßen<br>GradeNet</b></p></html><body>")
           Redirect(routes.HomeController.showCurrentState(petitionId.toInt)).withSession((s"appreciation${petitionId}", petitionId.toString)).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
         }
       }
@@ -205,7 +242,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
               }
 
               // Create new appreciation in database
-              val randomPassword = generateRandomPassword()
+              val randomPassword = generateRandomPassword(None)
               println(randomPassword)
               petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, Some(successForm.currentPO), Some(successForm.newPO), generateHash(randomPassword, false), successForm.course)
 
@@ -220,6 +257,19 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
               // Upload file in new directory
               file.ref.moveFileTo(Paths.get(s"$tmpUploadDir/Notenkonto.$fileType"), replace = false)
+
+              // Send mail
+              sendEmail(
+                s"Antrag #${petitionId} eigegangen",
+                successForm.email,
+                successForm.firstName,
+                successForm.lastName,
+                s"",
+                s"<html><body><p><b>Hallo ${successForm.firstName} ${successForm.lastName},</b><br>Ihr Antrag zur Notenanerkennung ist bei uns eingenagngen " +
+                  s"und wird so schnell wie möglich bearbeitet. Den Status Ihres Antrags können Sie mit folgenden Zugangsdaten einsehen:</p>" +
+                  s"<p><b>Link:</b> <a href='${rootAddress}${routes.HomeController.showCurrentState(petitionId.toInt)}'>${rootAddress}${routes.HomeController.showCurrentState(petitionId.toInt)}</a><br>" +
+                  s"<b>Passwort:</b> <code>${randomPassword}</code></p>" +
+                  s"<p><b>Mit freundlichen Grüßen<br>GradeNet</b></p></html><body>")
 
               // Redirect and show success alert after successfully transfer all form data
               Redirect(routes.HomeController.showCurrentState(petitionId.toInt)).withSession((s"appreciation${petitionId}", petitionId.toString)).flashing("success" -> "Der Antrag wurde erfolgreich eingereicht!")
@@ -408,7 +458,19 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
           },
           successForm => {
             // Change state in database
+            val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
             dbController.changeAppreciationState(id, successForm.state)
+
+            // Send mail
+            sendEmail(
+              s"Statusänderungen Antrag #${appreciationData.id}",
+              appreciationData.email,
+              appreciationData.firstName,
+              appreciationData.lastName,
+              s"",
+              s"<html><body><p><b>Hallo ${appreciationData.firstName} ${appreciationData.lastName},</b><br>" +
+                s"""der Status Ihres Antrags #${appreciationData.id} wurde auf "<b>${stateToString(successForm.state)}</b>" geändert!</p>""" +
+                s"<p><b>Mit freundlichen Grüßen<br>GradeNet</b></p></html><body>")
 
             // Redirect after change and show changes
             Redirect(routes.HomeController.adminPanelDetails(id)).flashing("success" ->

@@ -20,16 +20,32 @@
     <div class="row">
         <div class="col-lg-12">
                 <!-- Page content -->
-            <div class="input-group mb-2 align-items-center">
-                @if(session.get("admin")) {
-                    <div class='btn-toolbar pull-left' style="margin-right: 1em;">
-                        <a href="@routes.HomeController.adminPanel" class="btn btn-primary" role="button">
-                            <i class="fas fa-chevron-left"></i>
+            <div class="row align-items-center">
+                <div class="col-lg-8 m-0">
+                    <div class="input-group mb-2 align-items-center">
+                        @if(session.get("admin")) {
+                            <div class='btn-toolbar pull-left' style="margin-right: 1em;">
+                                <a href="@routes.HomeController.adminPanel" class="btn btn-primary" role="button">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </div>
+                        }
+                    <h1 class="mr-3">@pageTitle #@getString(appreciation, "id")</h1>
+                    <h5>(<i class="@stateColor(getState(appreciation), "text")">@stateToString(getState(appreciation))</i>)</h5>
+                    </div>
+                </div>
+                <div class="col-lg-4 m-0">
+                @if(session.get(s"appreciation${getId(appreciation)}")) {
+                    <div class='float-right' style="margin-right: 1em;">
+                        <a href="@routes.HomeController.logout">
+                            <button class="btn btn-warning" type="submit">
+                                <i class="fas fa-times-circle"></i>
+                                    &nbsp;Sitzung beenden
+                            </button>
                         </a>
                     </div>
                 }
-                <h1 class="mr-3">@pageTitle #@getString(appreciation, "id")</h1>
-                <h5>(<i class="@stateColor(getState(appreciation), "text")">@stateToString(getState(appreciation))</i>)</h5>
+                </div>
             </div>
 
             <br>
@@ -97,12 +113,12 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @for(module <- moduleList) {
-                                                <tr>
-                                                    <td>@module.name</td>
-                                                    <td>@module.appreciationName</td>
-                                                </tr>
-                                            }
+                                        @for(module <- moduleList) {
+                                            <tr>
+                                                <td>@module.name</td>
+                                                <td>@module.appreciationName</td>
+                                            </tr>
+                                        }
                                         </tbody>
                                     </table>
                                 </td>
@@ -124,21 +140,21 @@
                         <tr>
                             <th scope="row">Status</th>
                             <td>
-                                @if(session.get("admin")) {
-                                    <form action="@routes.HomeController.adminPanelDetailsChangeState(getId(appreciation))" method="POST" class="form-inline">
-                                        @helper.CSRF.formField
-                                        <select class="custom-select m-1" id="state" name="state">
-                                        @for(state <- stateList) {
-                                            <option value="@state"
-                                            @if(state == switchStateInt(getState(appreciation)).asInstanceOf[Int]) {selected}>@stateToString(state) </option>
-                                        }
-                                        </select>
-                                        <button type="submit" class="btn btn-primary">Speichern</button>
-                                    </form>
-                                } else {
-                                    <strong class="@stateColor(appreciation.state, "text")">@getString(appreciation, "state")</strong>
-                                            <p>@getDescription(appreciation)</p>
-                                }
+                            @if(session.get("admin")) {
+                                <form action="@routes.HomeController.adminPanelDetailsChangeState(getId(appreciation))" method="POST" class="form-inline">
+                                    @helper.CSRF.formField
+                                    <select class="custom-select m-1" id="state" name="state">
+                                    @for(state <- stateList) {
+                                        <option value="@state"
+                                        @if(state == switchStateInt(getState(appreciation)).asInstanceOf[Int]) {selected}>@stateToString(state) </option>
+                                    }
+                                    </select>
+                                    <button type="submit" class="btn btn-primary">Speichern</button>
+                                </form>
+                            } else {
+                                <strong class="@stateColor(appreciation.state, "text")">@getString(appreciation, "state")</strong>
+                                <p>@getDescription(appreciation)</p>
+                            }
                             </td>
                         </tr>
                     </tbody>

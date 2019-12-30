@@ -13,6 +13,9 @@ libraryDependencies += "org.postgresql" % "postgresql" % "9.4.1208"
 libraryDependencies += "org.playframework.anorm" %% "anorm" % "2.6.5"
 libraryDependencies += "com.outr" %% "hasher" % "1.2.2"
 
+libraryDependencies += "com.typesafe.play" %% "play-mailer" % "7.0.1"
+libraryDependencies += "com.typesafe.play" %% "play-mailer-guice" % "7.0.1"
+
 libraryDependencies ++= Seq(evolutions, jdbc)
 
 scalacOptions ++= Seq(

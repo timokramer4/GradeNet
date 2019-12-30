@@ -1,24 +1,23 @@
 package controllers
 
 import com.roundeights.hasher.Implicits._
-import scala.util.Random
 
 object Hasher {
   def generateHash(str: String, salt: Boolean): String = {
-    if(salt){
+    if (salt) {
       str.salt("AySe9BbU4JrxnYLIBReKoWRq3vfbN7dG").sha256.hex
     } else {
       return str.sha256.hex
     }
   }
 
-    def generateRandomPassword(): String = {
-    var r: Random = Random
-    var result: String = ""
-    for(i <- 0 to 12){
-      r = Random
-      result += r.nextPrintableChar()
+  def generateRandomPassword(length: Option[Int]): String = {
+    val rand = new scala.util.Random(System.nanoTime)
+    val password = new StringBuilder(length.getOrElse(12))
+    val validChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    for (i <- 0 to length.getOrElse(12)) {
+      password.append(validChars(rand.nextInt(validChars.length)))
     }
-    return result
+    password.toString
   }
 }

@@ -17,7 +17,9 @@ import controllers.Hasher._
 import play.api.libs.mailer.{Email, MailerClient}
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Deadline
 import scala.reflect.io.Directory
+import scala.concurrent.duration._
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -31,6 +33,12 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   var tmpUploadDir: Path = _
   val uploadDir: String = "uploads"
   val rootAddress: String = "http://localhost:9000"
+  val maxFailedLogins: Int = 3
+
+  // Global variables (don't change)
+  private var failedLogins: Int = 0
+  private var globalLoginRestriction: Boolean = false
+  private var timeout: Deadline = _
 
   /**
    * Send mail
@@ -61,12 +69,6 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
    * @return
    */
   def home(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    val t = new Thread(new Runnable {
-      def run() = {
-        println("hello world")
-      }
-    })
-    t.start()
     Ok(views.html.main("Startseite", views.html.home()))
   }
 
@@ -91,7 +93,6 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def appreciationSinglePost = Action(parse.multipartFormData) { implicit request =>
     aFormSingle.bindFromRequest.fold(
       errorForm => {
-        println(errorForm.errors.toList)
         Redirect(routes.HomeController.appreciationSingle).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
       },
       successForm => {
@@ -253,7 +254,6 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
               // Create new appreciation in database
               val randomPassword = generateRandomPassword(None)
-              println(randomPassword)
               petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, Some(successForm.currentPO), Some(successForm.newPO), generateHash(randomPassword, false), successForm.course)
 
               // Remove existing directory recursive
@@ -363,17 +363,52 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         println("Admin: " + user.admin)
 
         // Validate username and password
-        if (user.password == passInput) {
-          if (user.admin) {
-            println("Logged in successfully!")
-            Redirect(routes.HomeController.adminPanel()).withSession(("admin", user.username))
+        if (!globalLoginRestriction) {
+          if (user.password == passInput) {
+            if (user.admin) {
+              println("Logged in successfully!")
+              resetLoginProtection()
+              Redirect(routes.HomeController.adminPanel()).withSession(("admin", user.username))
+            } else {
+              println("No permissions!")
+              Redirect(routes.HomeController.adminLogin()).flashing("error" -> "Fehlende Berechtigungen!")
+            }
           } else {
-            println("No permissions!")
-            Redirect(routes.HomeController.adminLogin()).flashing("error" -> "Fehlende Berechtigungen!")
+            println("Access denied!")
+            failedLogins += 1
+            if (protectLogin(15)) {
+              Redirect(routes.HomeController.adminLogin()).flashing("error" -> s"Der Zugang ist aus Sicherheitsgründen temporär gesperrt (verbleibend: ${
+                if (timeout.timeLeft.toMinutes % 60 >= 10) {
+                  timeout.timeLeft.toMinutes % 60
+                } else {
+                  String.format("%02d", timeout.timeLeft.toMinutes % 60)
+                }
+              }:${
+                if (timeout.timeLeft.toSeconds % 60 >= 10) {
+                  timeout.timeLeft.toSeconds % 60
+                } else {
+                  String.format("%02d", timeout.timeLeft.toSeconds % 60)
+                }
+              })!")
+            } else {
+              Redirect(routes.HomeController.adminLogin()).flashing("error" -> s"Benutzername oder Passwort falsch! (Versuch ${failedLogins}/${maxFailedLogins})")
+            }
           }
         } else {
-          println("Access denied!")
-          Redirect(routes.HomeController.adminLogin()).flashing("error" -> "Benutzername oder Passwort falsch!")
+          println("Login is protected - No login possible!")
+          Redirect(routes.HomeController.adminLogin()).flashing("error" -> s"Der Zugang ist aus Sicherheitsgründen temporär gesperrt (verbleibend: ${
+            if (timeout.timeLeft.toMinutes % 60 >= 10) {
+              timeout.timeLeft.toMinutes % 60
+            } else {
+              String.format("%02d", timeout.timeLeft.toMinutes % 60)
+            }
+          }:${
+            if (timeout.timeLeft.toSeconds % 60 >= 10) {
+              timeout.timeLeft.toSeconds % 60
+            } else {
+              String.format("%02d", timeout.timeLeft.toSeconds % 60)
+            }
+          })!")
         }
       }
     )
@@ -818,5 +853,42 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       }.getOrElse {
       return false
     }
+  }
+
+  /**
+   * Protects the login for brute force attacks
+   *
+   * @param minutes
+   */
+  def protectLogin(minutes: Int): Boolean = {
+    if (failedLogins >= maxFailedLogins) {
+      globalLoginRestriction = true
+      timeout = minutes.minutes.fromNow
+      println("Brute force attack prevented - login blocked!")
+
+      new Thread(new Runnable {
+        override def run(): Unit = {
+          while (!timeout.isOverdue) {
+            Thread.sleep(1000)
+            if (timeout.isOverdue) {
+              println("Access released again!")
+              globalLoginRestriction = false
+              failedLogins = 0
+            }
+          }
+        }
+      }).start()
+      return true
+    } else {
+      return false
+    }
+  }
+
+  /**
+   * Reset global login protection
+   */
+  def resetLoginProtection(): Unit = {
+    globalLoginRestriction = false
+    failedLogins = 0
   }
 }

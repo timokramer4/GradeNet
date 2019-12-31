@@ -142,8 +142,11 @@
 
         <script>
                 /* Set initial default course at start */
-                var courseId = 1;
-                appendModules()
+                var courseId;
+                $.getJSON(`/api/courses`, function (data) {
+                    courseId = data[0].id;
+                    appendModules()
+                });
 
                 /* Append new module */
                 $('#addModule').on("click", function () {
@@ -223,7 +226,7 @@
                 /* Refresh module list dynamically depending on selected course */
                 function appendModules() {
                     var moduleSelect = $('[id="modules_"]');
-                    $.getJSON(`/modules/${courseId}`, function (data) {
+                    $.getJSON(`/api/modules/${courseId}`, function (data) {
                         moduleSelect.empty();
                         $.each(data, function (key, val) {
                             moduleSelect.append(`<option value="${val.id}">${val.name}</option>`);

@@ -1,6 +1,7 @@
 @import java.io.File
 @import controllers.Forms.CourseForm._
 @import models.Course._
+@import java.util.Calendar
 @(courseList: List[Course])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, pageTitle: String = "Studiengänge", flash: Flash)
 
 <div class="row">
@@ -40,6 +41,16 @@
                     Symbol("_label") -> "Name des Studiengangs",
                     Symbol("placeholder") -> "Studiengang",
                     Symbol("required") -> "")
+                @helper.inputText(courseForm("po"),
+                    Symbol("_class") -> "form-group col-md-2",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Prüfungsordnung",
+                    Symbol("placeholder") -> "Prüfungsordnung",
+                    Symbol("type") -> "number",
+                    Symbol("min") -> (Calendar.getInstance.get(Calendar.YEAR) - 10),
+                    Symbol("max") -> Calendar.getInstance.get(Calendar.YEAR),
+                    Symbol("required") -> "")
                 @helper.input(courseForm("graduation"),
                     Symbol("_class") -> "form-group col-md-3",
                     Symbol("class") -> "form-control",
@@ -52,7 +63,7 @@
                     </select>
                 }
                 @helper.inputText(courseForm("semester"),
-                    Symbol("_class") -> "form-group col-md-3",
+                    Symbol("_class") -> "form-group col-md-2",
                     Symbol("class") -> "form-control",
                     Symbol("_showConstraints") -> false,
                     Symbol("_label") -> "Anzahl der Fachsemester",
@@ -61,7 +72,7 @@
                     Symbol("min") -> "3",
                     Symbol("max") -> "7",
                     Symbol("required") -> "")
-                <div class="form-group col-md-2 d-flex flex-column">
+                <div class="form-group col-md-1 d-flex flex-column">
                     <button type="submit" id="addModule" class="btn btn-success btn-block mt-auto mb-2"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
@@ -78,6 +89,7 @@
                     <tr>
                         <th scope="col">#</th>
                         <th scope="col">Studiengang</th>
+                        <th scope="col">Prüfungsordnung</th>
                         <th scope="col">Abschluss</th>
                         <th scope="col">Anzahl der Semester</th>
                         <th scope="col">Aktion</th>
@@ -88,6 +100,7 @@
                     <tr class="clickable" data-href="@routes.HomeController.adminPanelSingleCourse(getId(course))">
                         <th class="align-middle" id="id" scope="row">@getString(course, "id")</th>
                         <td class="align-middle">@getString(course, "name")</td>
+                        <td class="align-middle">@getString(course, "po")</td>
                         <td class="align-middle">@getGraduation(course)</td>
                         <td class="align-middle">@getString(course, "semester")</td>
                         <td class="align-middle">

@@ -1,12 +1,13 @@
 package models
 
-case class Course(id: Int, name: String, graduation: Int, semester: Int)
+case class Course(id: Int, name: String, po: Int, graduation: Int, semester: Int)
 
 object Course {
   def getString(course: Course, key: String): String = {
     key match {
       case "id" => course.id.toString()
       case "name" => course.name.toString()
+      case "po" => course.po.toString()
       case "graduation" => course.graduation.toString()
       case "semester" => course.semester.toString()
       case _ => "\"" + key + "\" not found!";
@@ -34,6 +35,5 @@ object Course {
       }
       case _ => throw new IllegalArgumentException("Falscher Datentyp!")
     }
-
   }
 }

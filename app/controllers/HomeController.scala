@@ -81,7 +81,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     val uniList: List[(String, String)] = jsonConverter(Json.parse(r.text)) // [{}, {}]
     val moduleList: List[(String, String)] = dbController.getAllModules(0).map(module => (module.id.toString, module.name))
-    val courseList: List[(String, String)] = dbController.getAllCourses().map(course => (course.id.toString, s"${course.name} - ${Course.getGraduation(course)}"))
+    val courseList: List[(String, String)] = dbController.getAllCourses().map(course => (course.id.toString, s"${course.name} - PO${course.po} - ${Course.getGraduation(course)}"))
     Ok(views.html.main("Antrag", views.html.appreciationSingle(aFormSingle, uniList, moduleList, courseList)))
   }
 
@@ -128,7 +128,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
                   // Create new appreciation in database
                   randomPassword = generateRandomPassword(None)
-                  petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, None, None, generateHash(randomPassword, false), successForm.course)
+                  petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, successForm.course, None, generateHash(randomPassword, false))
 
                   // Remove existing directory recursive
                   if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
@@ -222,7 +222,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def appreciationAll(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     val uniList: List[(String, String)] = jsonConverter(Json.parse(r.text))
-    val courseList: List[(String, String)] = dbController.getAllCourses().map(course => (course.id.toString, s"${course.name} - ${Course.getGraduation(course)}"))
+    val courseList: List[(String, String)] = dbController.getAllCourses().map(course => (course.id.toString, s"${course.name} - PO${course.po} - ${Course.getGraduation(course)}"))
     Ok(views.html.main("Antrag", views.html.appreciationAll(aFormAll, uniList, courseList)))
   }
 
@@ -235,7 +235,6 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     aFormAll.bindFromRequest.fold(
       errorForm => {
         Redirect(routes.HomeController.appreciationAll).flashing("error" -> "Fehlende Angaben! Bitte füllen Sie alle notwendigen Felder aus.")
-        //        BadRequest(views.html.appreciationAll(errorForm))
       },
       successForm => {
         request.body
@@ -254,7 +253,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
 
               // Create new appreciation in database
               val randomPassword = generateRandomPassword(None)
-              petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, Some(successForm.currentPO), Some(successForm.newPO), generateHash(randomPassword, false), successForm.course)
+              petitionId = dbController.createAppreciation(successForm.firstName, successForm.lastName, successForm.email, successForm.matrNr, successForm.university, successForm.currentPO, Some(successForm.newPO), generateHash(randomPassword, false))
 
               // Remove existing directory recursive
               if (Files.exists(Paths.get(s"$uploadDir/$petitionId"))) {
@@ -308,10 +307,16 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def showCurrentState(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (sessionExists(s"appreciation${id}")) {
       val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
+      var currentPO: Int = 0
+      var newPO: Int = 0
+      if (appreciationData.currentPO != appreciationData.newPO) {
+        currentPO = dbController.getCourse(appreciationData.currentPO).po
+        newPO = dbController.getCourse(appreciationData.newPO).po
+      }
       val uploadedFiles: List[File] = getListOfFiles(id)
       val stateList: List[Int] = getStateList()
       val moduleList: List[Module] = dbController.getModulesFromAppreciation(id)
-      Ok(views.html.main("Status", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList)))
+      Ok(views.html.main("Status", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList, Some(currentPO), Some(newPO))))
     } else {
       Redirect(routes.HomeController.stateLogin(id))
     }
@@ -482,10 +487,16 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       if (sessionExists("admin")) {
         // Get appreciation details and render data on template
         val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
+        var currentPO: Int = 0
+        var newPO: Int = 0
+        if (appreciationData.currentPO != appreciationData.newPO) {
+          currentPO = dbController.getCourse(appreciationData.currentPO).po
+          newPO = dbController.getCourse(appreciationData.newPO).po
+        }
         val uploadedFiles: List[File] = getListOfFiles(id)
         val stateList: List[Int] = getStateList()
         val moduleList: List[Module] = dbController.getModulesFromAppreciation(id)
-        Ok(views.html.main("Admin Panel", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList)))
+        Ok(views.html.main("Admin Panel", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList, Some(currentPO), Some(newPO))))
       } else {
         Redirect(routes.HomeController.adminLogin())
       }
@@ -569,7 +580,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         },
         successForm => {
           // Create new course in database
-          dbController.createCourse(successForm.name, successForm.gradiation, successForm.semester)
+          dbController.createCourse(successForm.name, successForm.po, successForm.gradiation, successForm.semester)
 
           // Redirect and show success alert
           Redirect(routes.HomeController.adminPanelCourses).flashing("success" ->
@@ -622,7 +633,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     implicit request: Request[AnyContent] =>
       if (sessionExists("admin")) {
         val course: Course = dbController.getCourse(id)
-        val filledForm = courseForm.fill(CourseData(course.name, course.graduation, course.semester))
+        val filledForm = courseForm.fill(CourseData(course.name, course.po, course.graduation, course.semester))
         val courseModuleList = dbController.getAllModules(id)
         Ok(views.html.main("Admin Panel", views.html.adminPanelSingleCourse(id, filledForm, course, courseModuleList)))
       } else {
@@ -647,7 +658,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
           },
           successForm => {
             // Edit database entry
-            dbController.editCourse(Course(id, successForm.name, successForm.gradiation, successForm.semester))
+            dbController.editCourse(Course(id, successForm.name, successForm.po, successForm.gradiation, successForm.semester))
 
             // Redirect after success
             Redirect(routes.HomeController.adminPanelSingleCourse(id)).flashing("success" ->
@@ -782,6 +793,24 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     )
   }
 
+  implicit val courseWrites = new Writes[Course] {
+    def writes(module: Course) = Json.obj(
+      "id" -> module.id,
+      "name" -> module.name,
+      "po" -> module.po,
+      "graduation" -> module.semester,
+      "semester" -> module.semester
+    )
+  }
+
+  // Render JSON struct with all courses
+  def getCoursesAsJson() = Action { implicit request =>
+    import play.api.libs.json._
+    val courseList = dbController.getAllCourses()
+    Ok(Json.toJson(courseList))
+  }
+
+  // Render JSON struct with all modules from specific course
   def getModulesAsJson(id: Int) = Action { implicit request =>
     import play.api.libs.json._
     val courseModuleList = dbController.getAllModules(id)

@@ -10,11 +10,22 @@ object AppreciationForm {
                   lastName: String,
                   email: String,
                   matrNr: Int,
-                  course: Int,
                   university: String,
                   currentPO: Int,
                   newPO: Int
                 )
+
+  val aFormAll = Form(
+    mapping(
+      "firstName" -> nonEmptyText,
+      "lastName" -> nonEmptyText,
+      "email" -> email,
+      "matrNr" -> number(min = 100000, max = 999999),
+      "university" -> nonEmptyText,
+      "currentPO" -> number,
+      "newPO" -> number
+    )(All.apply)(All.unapply)
+  )
 
   case class Single(
                      firstName: String,
@@ -38,18 +49,5 @@ object AppreciationForm {
       "modules" -> list(number),
       "appreciationName" -> list(nonEmptyText)
     )(Single.apply)(Single.unapply)
-  )
-
-  val aFormAll = Form(
-    mapping(
-      "firstName" -> nonEmptyText,
-      "lastName" -> nonEmptyText,
-      "email" -> email,
-      "matrNr" -> number(min = 100000, max = 999999),
-      "course" -> number,
-      "university" -> nonEmptyText,
-      "currentPO" -> number,
-      "newPO" -> number
-    )(All.apply)(All.unapply)
   )
 }

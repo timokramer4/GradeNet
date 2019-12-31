@@ -1,5 +1,5 @@
 @import java.io.File
-@(appreciation: Appreciation, files: List[File], stateList: List[Int], moduleList: List[Module])(implicit session: Session, requestHeader: RequestHeader, pageTitle: String = "Antrag", flash: Flash)
+@(appreciation: Appreciation, files: List[File], stateList: List[Int], moduleList: List[Module], currentPO: Option[Int], newPO: Option[Int])(implicit session: Session, requestHeader: RequestHeader, pageTitle: String = "Antrag", flash: Flash)
 
     @import models.State._
     @import models.Appreciation._
@@ -130,11 +130,11 @@
                             </tr>
                             <tr>
                                 <th scope="row">Alte Prüfungsordnung</th>
-                                <td>@getString(appreciation, "currentPO")</td>
+                                <td>@currentPO</td>
                             </tr>
                             <tr>
                                 <th scope="row">Neue Prüfungsordnung</th>
-                                <td>@getString(appreciation, "newPO")</td>
+                                <td>@newPO</td>
                             </tr>
                         }
                         <tr>

@@ -77,12 +77,19 @@
                     Symbol("required") -> "")
             </div>
             <div class="form-row">
-                @helper.select(aFormAll("course"), courseList,
+                @helper.select(aFormAll("currentPO"), courseList,
                     Symbol("_class") -> "form-group col-md-6",
                     Symbol("class") -> "form-control",
-                    Symbol("_label") -> "Studiengang",
+                    Symbol("_label") -> "Studiengang aktuelle PO",
                     Symbol("_showConstraints") -> false,
                     Symbol("required") -> "")
+                @helper.select(aFormAll("newPO"), courseList,
+                    Symbol("_class") -> "form-group col-md-6",
+                    Symbol("class") -> "form-control",
+                    Symbol("_label") -> "Studiengang neue PO",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("required") -> "")
+                @*
                 @helper.inputText(aFormAll("currentPO"),
                     Symbol("_class") -> "form-group col-md-3",
                     Symbol("class") -> "form-control",
@@ -102,7 +109,7 @@
                     Symbol("type") -> "number",
                     Symbol("min") -> "2009",
                     Symbol("max") -> "2020",
-                    Symbol("required") -> "")
+                    Symbol("required") -> "")*@
             </div>
             <div class="form-row">
                 <div class="form-group col">

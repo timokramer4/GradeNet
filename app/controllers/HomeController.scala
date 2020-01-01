@@ -108,7 +108,6 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         var formError: Int = State.SUCCESS
 
         val moduleList: List[Module] = dbController.getModuleFromIntList(successForm.modules)
-        println(s"${moduleList.size} - ${request.body.files.size-1}")
 
         // Check amount of files
         if (moduleList.size == request.body.files.size - 1) {

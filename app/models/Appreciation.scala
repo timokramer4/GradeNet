@@ -2,22 +2,23 @@ package models
 
 import models.State.stateToString
 
-case class Appreciation(id: Int, firstName: String, lastName: String, matrNr: Int, email: String, university: String, currentPO: Int, newPO: Int, password: String, state: State)
+case class Appreciation(id: Int, firstName: String, lastName: String, matrNr: Int, email: String, university: String, currentPO: Int, newPO: Int, password: String, state: State, course: Option[String])
 
 object Appreciation {
-  def getString(student: Appreciation, key: String): String = {
+  def getString(appreciation: Appreciation, key: String): String = {
     key match {
-      case "id" => student.id.toString
-      case "firstName" => student.firstName
-      case "lastName" => student.lastName
-      case "matrNr" => student.matrNr.toString
-      case "email" => student.email
-      case "university" => student.university
-      case "currentPO" => student.currentPO.toString
-      case "newPO" => student.newPO.toString
-      case "password" => student.password
+      case "id" => appreciation.id.toString
+      case "firstName" => appreciation.firstName
+      case "lastName" => appreciation.lastName
+      case "matrNr" => appreciation.matrNr.toString
+      case "email" => appreciation.email
+      case "university" => appreciation.university
+      case "course" => appreciation.course.getOrElse("").toString
+      case "currentPO" => appreciation.currentPO.toString
+      case "newPO" => appreciation.newPO.toString
+      case "password" => appreciation.password
       case "state" => {
-        stateToString(student.state)
+        stateToString(appreciation.state)
       }
       case _ => "\"" + key + "\" not found!";
     }

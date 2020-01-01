@@ -20,6 +20,44 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   private val coursesEntity = "course"
   private val userEntity = "user"
 
+  /** *************************
+   * * SQL PARSER
+   * * *************************/
+
+  val appreciationParser: RowParser[Appreciation] = {
+    int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("currentPO") ~ int("newPO") ~ str("password") ~ int("state") ~ get[Option[String]]("course") map {
+      case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ currentPO ~ newPO ~ password ~ state ~ course => Appreciation(id, fn, ln, mnr, email, uni, currentPO, newPO, password, switchStateInt(state).asInstanceOf[State], course)
+    }
+  }
+
+  val courseParser: RowParser[Course] = {
+    int("id") ~ str("name") ~ int("po") ~ int("gradiation") ~ int("semester") map {
+      case id ~ name ~ po ~ gradiation ~ semester => Course(id, name, po, gradiation, semester)
+    }
+  }
+
+  val moduleParserDesc: RowParser[Module] = {
+    int("id") ~ str("name") ~ get[Option[String]]("appreciationName") ~ int("semester") ~ int("course_id") map {
+      case id ~ name ~ appreciationName ~ semester ~ course => Module(id, name, appreciationName, semester, course)
+    }
+  }
+
+  val moduleParser: RowParser[Module] = {
+    int("id") ~ str("name") ~ int("semester") ~ int("course_id") map {
+      case id ~ name ~ semester ~ course => Module(id, name, None, semester, course)
+    }
+  }
+
+  val userParser: RowParser[User] = {
+    str("username") ~ str("password") ~ bool("admin") map {
+      case username ~ password ~ admin => User(username, password, admin)
+    }
+  }
+
+  /** *************************
+   * * GENERAL
+   * * *************************/
+
   /**
    * Check database integrity
    */
@@ -237,17 +275,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   def getAllAppreciations(): List[Appreciation] = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
-      val parser: RowParser[Appreciation] =
-        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("currentpo") ~ int("newpo") ~ str("password")  ~ int("state") map {
-          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ currentPO ~ newPO ~ password ~ state => Appreciation(id, fn, ln, mnr, email, uni, currentPO, newPO, password, switchStateInt(state).asInstanceOf[State])
-        }
-
       val result: List[Appreciation] = {
         ConfigFactory.load().getString("db.default.driver") match {
           case "com.mysql.jdbc.Driver" => // MySQL
-            SQL(s"""SELECT * FROM ${appreciationEntity}""").as(parser.*)
+            SQL(s"""SELECT $appreciationEntity.id, firstname, lastname, email, matrnr, university, state, currentpo, newpo, password, $coursesEntity.name as course FROM $appreciationEntity JOIN $coursesEntity ON ($appreciationEntity.currentpo = $coursesEntity.id)""").as(appreciationParser.*)
           case "org.postgresql.Driver" => // PostgreSQL
-            SQL(s"""SELECT * FROM "${appreciationEntity}"""").as(parser.*)
+            SQL(s"""SELECT $appreciationEntity.id, firstname, lastname, email, matrnr, university, state, currentpo, newpo, password, $coursesEntity.name as course FROM "$appreciationEntity" JOIN "$coursesEntity" ON ($appreciationEntity.currentpo = $coursesEntity.id)""").as(appreciationParser.*)
         }
       }
       return result
@@ -263,18 +296,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
   def getSingleAppreciation(id: Int): Appreciation = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
-      val parser: RowParser[Appreciation] = {
-        int("id") ~ str("firstname") ~ str("lastname") ~ int("matrnr") ~ str("email") ~ str("university") ~ int("currentpo") ~ int("newpo") ~ str("password") ~ int("state") map {
-          case id ~ fn ~ ln ~ mnr ~ email ~ uni ~ currentPO ~ newPO ~ password ~ state => Appreciation(id, fn, ln, mnr, email, uni, currentPO, newPO, password, switchStateInt(state).asInstanceOf[State])
-        }
-      }
-
       val result: Appreciation = {
         ConfigFactory.load().getString("db.default.driver") match {
           case "com.mysql.jdbc.Driver" => // MySQL
-            SQL(s"""SELECT * from ${appreciationEntity} WHERE id = ${id}""").as(parser.single)
+            SQL(s"""SELECT $appreciationEntity.id, firstname, lastname, matrnr, email, university, c.name AS course, c.po AS currentPO, n.po AS newPO, password, state from "$appreciationEntity" JOIN "${coursesEntity}" as c ON ($appreciationEntity.currentpo = c.id AND $appreciationEntity.id = $id) JOIN "$coursesEntity" as n ON ($appreciationEntity.newpo = n.id AND $appreciationEntity.id = $id)""").as(appreciationParser.single)
           case "org.postgresql.Driver" => // PostgreSQL
-            SQL(s"""SELECT * from "${appreciationEntity}" WHERE id = ${id}""").as(parser.single)
+            SQL(s"""SELECT $appreciationEntity.id, firstname, lastname, matrnr, email, university, c.name AS course, c.po AS currentPO, n.po AS newPO, password, state from "$appreciationEntity" JOIN "${coursesEntity}" as c ON ($appreciationEntity.currentpo = c.id AND $appreciationEntity.id = $id) JOIN "$coursesEntity" as n ON ($appreciationEntity.newpo = n.id AND $appreciationEntity.id = $id)""").as(appreciationParser.single)
         }
       }
       return result
@@ -314,12 +341,6 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>
-        val parser: RowParser[Module] = {
-          int("id") ~ str("name") ~ get[Option[String]]("appreciationName") ~ int("semester") ~ int("course_id") map {
-            case id ~ name ~ appreciationName ~ semester ~ course => Module(id, name, appreciationName, semester, course)
-          }
-        }
-
         val result: List[Module] = {
           ConfigFactory.load().getString("db.default.driver") match {
             case "com.mysql.jdbc.Driver" => // MySQL
@@ -342,7 +363,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                   appreciationEntity
                 }.id = ${
                   id
-                }""").as(parser.*)
+                }""").as(moduleParserDesc.*)
             case "org.postgresql.Driver" => // PostgreSQL
               SQL(
                 s"""SELECT * from "${
@@ -363,7 +384,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                   appreciationEntity
                 }".id = ${
                   id
-                }""").as(parser.*)
+                }""").as(moduleParserDesc.*)
           }
         }
         return result
@@ -425,7 +446,9 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                 coursesEntity
               } SET name = '${
                 course.name
-              }', gradiation = ${
+              }', po = ${
+                course.po
+              }, gradiation = ${
                 course.graduation
               }, semester = ${
                 course.semester
@@ -438,7 +461,9 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                 coursesEntity
               }" SET name = '${
                 course.name
-              }', gradiation = ${
+              }', po = ${
+                course.po
+              }, gradiation = ${
                 course.graduation
               }, semester = ${
                 course.semester
@@ -464,16 +489,16 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
         ConfigFactory.load().getString("db.default.driver") match {
           case "com.mysql.jdbc.Driver" => // MySQL
             SQL(
-              s"""DELETE FROM ${appreciationEntity} WHERE course_id = ${id};
-                 DELETE FROM ${modulesEntity} WHERE course_id = ${id};
+              s"""DELETE FROM $appreciationEntity WHERE currentpo = $id OR newpo = $id;
+                 DELETE FROM $modulesEntity WHERE course_id = $id;
                  """).executeUpdate()
-            amountDelete = SQL(s"""DELETE FROM ${coursesEntity} WHERE id = ${id};""").executeUpdate()
+            amountDelete = SQL(s"""DELETE FROM ${coursesEntity} WHERE id = $id;""").executeUpdate()
           case "org.postgresql.Driver" => // PostgreSQL
             SQL(
-              s"""DELETE FROM "${appreciationEntity}" WHERE course_id = ${id};
-                 DELETE FROM "${modulesEntity}" WHERE course_id = ${id};
+              s"""DELETE FROM "$appreciationEntity" WHERE currentpo = $id OR newpo = $id;
+                 DELETE FROM "$modulesEntity" WHERE course_id = $id;
                  """).executeUpdate()
-            amountDelete = SQL(s"""DELETE FROM "${coursesEntity}" WHERE id = ${id};""").executeUpdate()
+            amountDelete = SQL(s"""DELETE FROM "$coursesEntity" WHERE id = $id;""").executeUpdate()
         }
         return amountDelete
     }
@@ -489,12 +514,6 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>
-        val parser: RowParser[Course] = {
-          int("id") ~ str("name") ~ int("po") ~ int("gradiation") ~ int("semester") map {
-            case id ~ name ~ po ~ gradiation ~ semester => Course(id, name, po, gradiation, semester)
-          }
-        }
-
         val result: Course = {
           ConfigFactory.load().getString("db.default.driver") match {
             case "com.mysql.jdbc.Driver" => // MySQL
@@ -503,14 +522,14 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                   coursesEntity
                 } WHERE id = ${
                   id
-                };""").as(parser.single)
+                };""").as(courseParser.single)
             case "org.postgresql.Driver" => // PostgreSQL
               SQL(
                 s"""SELECT * FROM "${
                   coursesEntity
                 }" WHERE id = ${
                   id
-                };""").as(parser.single)
+                };""").as(courseParser.single)
           }
         }
         return result
@@ -526,12 +545,6 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>
-        val parser: RowParser[Course] = {
-          int("id") ~ str("name") ~ int("po") ~ int("gradiation") ~ int("semester") map {
-            case id ~ name ~ po ~ gradiation ~ semester => Course(id, name, po, gradiation, semester)
-          }
-        }
-
         val result: List[Course] = {
           try {
             ConfigFactory.load().getString("db.default.driver") match {
@@ -539,12 +552,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                 SQL(
                   s"""SELECT * FROM ${
                     coursesEntity
-                  } ORDER BY name ASC;""").as(parser.*)
+                  } ORDER BY name ASC;""").as(courseParser.*)
               case "org.postgresql.Driver" => // PostgreSQL
                 SQL(
                   s"""SELECT * FROM "${
                     coursesEntity
-                  }" ORDER BY name ASC;""").as(parser.*)
+                  }" ORDER BY name ASC;""").as(courseParser.*)
             }
           }
           catch {
@@ -631,31 +644,17 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
         var amountDelete: Int = 0
         ConfigFactory.load().getString("db.default.driver") match {
           case "com.mysql.jdbc.Driver" => // MySQL
+            // TODO: Löschen von Anträgen, die das Modul enthalten
             SQL(
-              s"""DELETE FROM ${
-                appreciationEntity
-              } WHERE module_id = ${
-                id
-              };""").executeUpdate()
+              s"""DELETE FROM $appreciationModulesEntity JOIN $appreciationEntity ON (id = appreciation_id AND module_id = $id);""").executeUpdate()
             amountDelete = SQL(
-              s"""DELETE FROM ${
-                modulesEntity
-              } WHERE id = ${
-                id
-              };""").executeUpdate()
+              s"""DELETE FROM $modulesEntity WHERE id = $id;""").executeUpdate()
           case "org.postgresql.Driver" => // PostgreSQL
+            // TODO: Löschen von Anträgen, die das Modul enthalten
             SQL(
-              s"""DELETE FROM "${
-                appreciationModulesEntity
-              }" WHERE module_id = ${
-                id
-              };""").executeUpdate()
+              s"""DELETE FROM "$appreciationModulesEntity" USING "$appreciationEntity" WHERE (id = appreciation_id AND module_id = $id);""").executeUpdate()
             amountDelete = SQL(
-              s"""DELETE FROM "${
-                modulesEntity
-              }" WHERE id = ${
-                id
-              };""").executeUpdate()
+              s"""DELETE FROM "$modulesEntity" WHERE id = $id;""").executeUpdate()
             removeAppreciation(id, false)
         }
         return amountDelete
@@ -672,24 +671,18 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>
-        val parser: RowParser[Module] = {
-          int("id") ~ str("name") ~ int("semester") ~ int("course_id") map {
-            case id ~ name ~ semester ~ course => Module(id, name, None, semester, course)
-          }
-        }
-
         val result: Module = {
           ConfigFactory.load().getString("db.default.driver") match {
             case "com.mysql.jdbc.Driver" => // MySQL
               SQL(
                 s"""SELECT * FROM ${
                   modulesEntity
-                } WHERE id = ${id}""").as(parser.single)
+                } WHERE id = ${id}""").as(moduleParser.single)
             case "org.postgresql.Driver" => // PostgreSQL
               SQL(
                 s"""SELECT * FROM "${
                   modulesEntity
-                }" WHERE id = ${id}""").as(parser.single)
+                }" WHERE id = ${id}""").as(moduleParser.single)
           }
         }
 
@@ -707,12 +700,6 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>
-        val parser: RowParser[Module] = {
-          int("id") ~ str("name") ~ int("semester") ~ int("course_id") map {
-            case id ~ name ~ semester ~ course => Module(id, name, None, semester, course)
-          }
-        }
-
         val result: List[Module] = {
           try {
             ConfigFactory.load().getString("db.default.driver") match {
@@ -720,12 +707,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                 SQL(
                   s"""SELECT * FROM ${
                     modulesEntity
-                  } WHERE course_id = ${courseId}""").as(parser.*)
+                  } WHERE course_id = $courseId""").as(moduleParser.*)
               case "org.postgresql.Driver" => // PostgreSQL
                 SQL(
                   s"""SELECT * FROM "${
                     modulesEntity
-                  }" WHERE course_id = ${courseId}""").as(parser.*)
+                  }" WHERE course_id = $courseId""").as(moduleParser.*)
             }
           }
           catch {
@@ -749,34 +736,20 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>
-        val parser: RowParser[Module] = {
-          int("id") ~ str("name") ~ int("semester") ~ int("course_id") map {
-            case id ~ name ~ semester ~ course => Module(id, name, None, semester, course)
-          }
-        }
-
         var moduleList: List[Module] = List[Module]()
         try {
           ConfigFactory.load().getString("db.default.driver") match {
             case "com.mysql.jdbc.Driver" => { // MySQL
               intList.foreach(moduleId =>
                 moduleList = moduleList :+ SQL(
-                  s"""SELECT * FROM ${
-                    modulesEntity
-                  } WHERE id = ${
-                    moduleId
-                  }""").as(parser.single)
+                  s"""SELECT * FROM $modulesEntity WHERE id = $moduleId""").as(moduleParser.single)
               )
             }
             case "org.postgresql.Driver" => { // PostgreSQL
               intList.foreach {
                 moduleId =>
                   moduleList = moduleList :+ SQL(
-                    s"""SELECT * FROM "${
-                      modulesEntity
-                    }" WHERE id = ${
-                      moduleId
-                    }""").as(parser.single)
+                    s"""SELECT * FROM "$modulesEntity" WHERE id = $moduleId""").as(moduleParser.single)
               }
             }
           }
@@ -832,12 +805,6 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>
-        val parser: RowParser[User] = {
-          str("username") ~ str("password") ~ bool("admin") map {
-            case username ~ password ~ admin => User(username, password, admin)
-          }
-        }
-
         val result: User = {
           try {
             ConfigFactory.load().getString("db.default.driver") match {
@@ -847,14 +814,14 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                     userEntity
                   } WHERE username = '${
                     username
-                  }' LIMIT 1""").as(parser.single)
+                  }' LIMIT 1""").as(userParser.single)
               case "org.postgresql.Driver" => // PostgreSQL
                 SQL(
                   s"""SELECT * FROM "${
                     userEntity
                   }" WHERE username = '${
                     username
-                  }' LIMIT 1""").as(parser.single)
+                  }' LIMIT 1""").as(userParser.single)
             }
           }
           catch {

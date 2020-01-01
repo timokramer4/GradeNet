@@ -1,5 +1,5 @@
 @import java.io.File
-@(appreciation: Appreciation, files: List[File], stateList: List[Int], moduleList: List[Module], currentPO: Option[Int], newPO: Option[Int])(implicit session: Session, requestHeader: RequestHeader, pageTitle: String = "Antrag", flash: Flash)
+@(appreciation: Appreciation, files: List[File], stateList: List[Int], moduleList: List[Module])(implicit session: Session, requestHeader: RequestHeader, pageTitle: String = "Antrag", flash: Flash)
 
     @import models.State._
     @import models.Appreciation._
@@ -97,6 +97,10 @@
                             <th scope="row">Hochschule/Uni</th>
                             <td>@getString(appreciation, "university")</td>
                         </tr>
+                        <tr>
+                            <th scope="row">Studiengang</th>
+                            <td>@getString(appreciation, "course") PO@getString(appreciation, "currentPO")</td>
+                        </tr>
                         @if(moduleList.nonEmpty) {
                             <tr>
                                 <th scope="row">Typ</th>
@@ -130,11 +134,11 @@
                             </tr>
                             <tr>
                                 <th scope="row">Alte Prüfungsordnung</th>
-                                <td>@currentPO</td>
+                                <td>@getString(appreciation, "currentPO")</td>
                             </tr>
                             <tr>
                                 <th scope="row">Neue Prüfungsordnung</th>
-                                <td>@newPO</td>
+                                <td>@getString(appreciation, "newPO")</td>
                             </tr>
                         }
                         <tr>

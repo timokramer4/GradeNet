@@ -108,6 +108,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
         var formError: Int = State.SUCCESS
 
         val moduleList: List[Module] = dbController.getModuleFromIntList(successForm.modules)
+        println(s"${moduleList.size} - ${request.body.files.size-1}")
 
         // Check amount of files
         if (moduleList.size == request.body.files.size - 1) {
@@ -307,16 +308,10 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def showCurrentState(id: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (sessionExists(s"appreciation${id}")) {
       val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
-      var currentPO: Int = 0
-      var newPO: Int = 0
-      if (appreciationData.currentPO != appreciationData.newPO) {
-        currentPO = dbController.getCourse(appreciationData.currentPO).po
-        newPO = dbController.getCourse(appreciationData.newPO).po
-      }
       val uploadedFiles: List[File] = getListOfFiles(id)
       val stateList: List[Int] = getStateList()
       val moduleList: List[Module] = dbController.getModulesFromAppreciation(id)
-      Ok(views.html.main("Status", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList, Some(currentPO), Some(newPO))))
+      Ok(views.html.main("Status", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList)))
     } else {
       Redirect(routes.HomeController.stateLogin(id))
     }
@@ -487,16 +482,10 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
       if (sessionExists("admin")) {
         // Get appreciation details and render data on template
         val appreciationData: Appreciation = dbController.getSingleAppreciation(id)
-        var currentPO: Int = 0
-        var newPO: Int = 0
-        if (appreciationData.currentPO != appreciationData.newPO) {
-          currentPO = dbController.getCourse(appreciationData.currentPO).po
-          newPO = dbController.getCourse(appreciationData.newPO).po
-        }
         val uploadedFiles: List[File] = getListOfFiles(id)
         val stateList: List[Int] = getStateList()
         val moduleList: List[Module] = dbController.getModulesFromAppreciation(id)
-        Ok(views.html.main("Admin Panel", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList, Some(currentPO), Some(newPO))))
+        Ok(views.html.main("Admin Panel", views.html.adminPanelDetails(appreciationData, uploadedFiles, stateList, moduleList)))
       } else {
         Redirect(routes.HomeController.adminLogin())
       }

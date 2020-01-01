@@ -1,6 +1,7 @@
 @import models.Course._
 @import controllers.Forms.CourseForm._
 @import controllers.Forms.ModuleForm._
+@import java.util.Calendar
 @(id: Int, filledCourseForm: Form[CourseData], course: Course, courseModuleList: List[Module])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, flash: Flash)
 
 <!-- Modal -->
@@ -89,8 +90,18 @@
                     Symbol("_label") -> "Name des Studiengangs",
                     Symbol("placeholder") -> "Studiengang",
                     Symbol("required") -> "")
+                @helper.inputText(filledCourseForm("po"),
+                    Symbol("_class") -> "form-group col-md-2",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Prüfungsordnung",
+                    Symbol("placeholder") -> "Prüfungsordnung",
+                    Symbol("type") -> "number",
+                    Symbol("min") -> (Calendar.getInstance.get(Calendar.YEAR) - 10),
+                    Symbol("max") -> Calendar.getInstance.get(Calendar.YEAR),
+                    Symbol("required") -> "")
                 @helper.input(filledCourseForm("graduation"),
-                    Symbol("_class") -> "form-group col-md-3",
+                    Symbol("_class") -> "form-group col-md-2",
                     Symbol("class") -> "form-control",
                     Symbol("_showConstraints") -> false,
                     Symbol("_label") -> "Abschluss",
@@ -101,7 +112,7 @@
                     </select>
                 }
                 @helper.inputText(filledCourseForm("semester"),
-                    Symbol("_class") -> "form-group col-md-3",
+                    Symbol("_class") -> "form-group col-md-2",
                     Symbol("class") -> "form-control",
                     Symbol("_showConstraints") -> false,
                     Symbol("_label") -> "Anzahl der Fachsemester",

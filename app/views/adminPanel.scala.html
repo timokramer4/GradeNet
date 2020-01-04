@@ -39,12 +39,12 @@
                     </thead>
                     <tbody>
                     @for(appreciation <- appreciationList) {
-                        <tr class='clickable @stateColor(appreciation.state, "table")' data-href='@routes.HomeController.adminPanel/@getString(appreciation, "id")'>
-                            <th id="id" scope="row">@getString(appreciation, "id")</th>
-                            <td>@getString(appreciation, "firstName")</td>
-                            <td>@getString(appreciation, "lastName")</td>
-                            <td>@getString(appreciation, "matrNr")</td>
-                            <td>@getString(appreciation, "email")</td>
+                        <tr class='clickable @stateColor(appreciation.state, "table")' data-href='@routes.HomeController.adminPanel/@appreciation.id'>
+                            <th id="id" scope="row">@appreciation.id</th>
+                            <td>@appreciation.firstName</td>
+                            <td>@appreciation.lastName</td>
+                            <td>@appreciation.matrNr</td>
+                            <td>@appreciation.email</td>
                             <td>@getString(appreciation, "state")</td>
                         </tr>
                     }

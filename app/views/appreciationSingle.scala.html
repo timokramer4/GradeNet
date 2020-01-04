@@ -229,7 +229,7 @@
                     $.getJSON(`/api/modules/${courseId}`, function (data) {
                         moduleSelect.empty();
                         $.each(data, function (key, val) {
-                            moduleSelect.append(`<option value="${val.id}">${val.name}</option>`);
+                            moduleSelect.append(`<option value="${val.id}">[${val.semester}. Semester] ${val.name}</option>`);
                         });
                     });
                 }

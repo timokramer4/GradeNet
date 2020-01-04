@@ -30,12 +30,12 @@
                                 </a>
                             </div>
                         }
-                    <h1 class="mr-3">@pageTitle #@getString(appreciation, "id")</h1>
-                    <h5>(<i class="@stateColor(getState(appreciation), "text")">@stateToString(getState(appreciation))</i>)</h5>
+                    <h1 class="mr-3">@pageTitle #@appreciation.id</h1>
+                    <h5>(<i class="@stateColor(appreciation.state, "text")">@stateToString(appreciation.state)</i>)</h5>
                     </div>
                 </div>
                 <div class="col-lg-4 m-0">
-                @if(session.get(s"appreciation${getId(appreciation)}")) {
+                @if(session.get(s"appreciation${appreciation.id}")) {
                     <div class='float-right' style="margin-right: 1em;">
                         <a href="@routes.HomeController.logout">
                             <button class="btn btn-warning" type="submit">
@@ -79,27 +79,27 @@
                     <tbody>
                         <tr>
                             <th scope="row">Vorname</th>
-                            <td>@getString(appreciation, "firstName")</td>
+                            <td>@appreciation.firstName</td>
                         </tr>
                         <tr>
                             <th scope="row">Nachname</th>
-                            <td>@getString(appreciation, "lastName")</td>
+                            <td>@appreciation.lastName</td>
                         </tr>
                         <tr>
                             <th scope="row">Matrikelnummer</th>
-                            <td>@getString(appreciation, "matrNr")</td>
+                            <td>@appreciation.matrNr</td>
                         </tr>
                         <tr>
                             <th scope="row">Email</th>
-                            <td><a href='mailto:@getString(appreciation, "email")'>@getString(appreciation, "email")</a></td>
+                            <td><a href='mailto:@appreciation.email'>@appreciation.email</a></td>
                         </tr>
                         <tr>
                             <th scope="row">Hochschule/Uni</th>
-                            <td>@getString(appreciation, "university")</td>
+                            <td>@appreciation.university</td>
                         </tr>
                         <tr>
                             <th scope="row">Studiengang</th>
-                            <td>@getString(appreciation, "course") PO@getString(appreciation, "currentPO")</td>
+                            <td>@appreciation.course PO@appreciation.currentPO</td>
                         </tr>
                         @if(moduleList.nonEmpty) {
                             <tr>
@@ -134,23 +134,23 @@
                             </tr>
                             <tr>
                                 <th scope="row">Alte Prüfungsordnung</th>
-                                <td>@getString(appreciation, "currentPO")</td>
+                                <td>@appreciation.currentPO</td>
                             </tr>
                             <tr>
                                 <th scope="row">Neue Prüfungsordnung</th>
-                                <td>@getString(appreciation, "newPO")</td>
+                                <td>@appreciation.newPO</td>
                             </tr>
                         }
                         <tr>
                             <th scope="row">Status</th>
                             <td>
                             @if(session.get("admin")) {
-                                <form action="@routes.HomeController.adminPanelDetailsChangeState(getId(appreciation))" method="POST" class="form-inline">
+                                <form action="@routes.HomeController.adminPanelDetailsChangeState(appreciation.id)" method="POST" class="form-inline">
                                     @helper.CSRF.formField
                                     <select class="custom-select m-1" id="state" name="state">
                                     @for(state <- stateList) {
                                         <option value="@state"
-                                        @if(state == switchStateInt(getState(appreciation)).asInstanceOf[Int]) {selected}>@stateToString(state) </option>
+                                        @if(state == switchStateInt(appreciation.state).asInstanceOf[Int]) {selected}>@stateToString(state) </option>
                                     }
                                     </select>
                                     <button type="submit" class="btn btn-primary">Speichern</button>
@@ -177,7 +177,7 @@
                     </thead>
                     <tbody>
                     @for(file <- files) {
-                        <tr class="clickable" data-href='@routes.HomeController.downloadFile(getId(appreciation), file.getName())' style="cursor: pointer;">
+                        <tr class="clickable" data-href='@routes.HomeController.downloadFile(appreciation.id, file.getName())' style="cursor: pointer;">
                             <th>@file.getName()</th>
                             <td class="text-right">@formatSize(file.length)</td>
                         </tr>

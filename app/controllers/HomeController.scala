@@ -81,7 +81,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     val uniList: List[(String, String)] = jsonConverter(Json.parse(r.text)) // [{}, {}]
     val moduleList: List[(String, String)] = dbController.getAllModules(0).map(module => (module.id.toString, module.name))
-    val courseList: List[(String, String)] = dbController.getAllCourses().map(course => (course.id.toString, s"${course.name} - PO${course.po} - ${Course.getGraduation(course)}"))
+    val courseList: List[(String, String)] = dbController.getAllCourses().map(course => (course.id.toString, s"${course.name} - PO${course.po} - ${Course.getGraduation(course.graduation)}"))
     Ok(views.html.main("Antrag", views.html.appreciationSingle(aFormSingle, uniList, moduleList, courseList)))
   }
 
@@ -222,7 +222,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
   def appreciationAll(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     val r = requests.get("http://universities.hipolabs.com/search?country=germany")
     val uniList: List[(String, String)] = jsonConverter(Json.parse(r.text))
-    val courseList: List[(String, String)] = dbController.getAllCourses().map(course => (course.id.toString, s"${course.name} - PO${course.po} - ${Course.getGraduation(course)}"))
+    val courseList: List[(String, String)] = dbController.getAllCourses().map(course => (course.id.toString, s"${course.name} - PO${course.po} - ${Course.getGraduation(course.graduation)}"))
     Ok(views.html.main("Antrag", views.html.appreciationAll(aFormAll, uniList, courseList)))
   }
 
@@ -595,7 +595,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
             s"""Der Studiengang "${
               course.name
             } - ${
-              Course.getGraduation(course)
+              Course.getGraduation(course.graduation)
             }" wurde erfolgreich entfernt!""")
         } else {
           // Redirect and show error alert
@@ -603,7 +603,7 @@ class HomeController @Inject()(dbController: DatabaseController, cc: ControllerC
             s"""Der Studiengang "${
               course.name
             } - ${
-              Course.getGraduation(course)
+              Course.getGraduation(course.graduation)
             }" konnte nicht entfernt werden!""")
         }
       } else {

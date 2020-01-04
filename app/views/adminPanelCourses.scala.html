@@ -96,13 +96,13 @@
                 </thead>
                 <tbody>
                 @for(course <- courseList) {
-                    <tr class="clickable" data-href="@routes.HomeController.adminPanelSingleCourse(getId(course))">
-                        <td class="align-middle">@getString(course, "name")</td>
-                        <td class="align-middle">@getString(course, "po")</td>
-                        <td class="align-middle">@getGraduation(course)</td>
-                        <td class="align-middle">@getString(course, "semester")</td>
+                    <tr class="clickable" data-href="@routes.HomeController.adminPanelSingleCourse(course.id)">
+                        <td class="align-middle">@course.name</td>
+                        <td class="align-middle">@course.po</td>
+                        <td class="align-middle">@getGraduation(course.graduation)</td>
+                        <td class="align-middle">@course.semester</td>
                         <td class="align-middle">
-                            <button type="button" id="removeCourse" data-href="@routes.HomeController.adminPanelSingleCourseRemove(getId(course))" class="btn btn-danger float-right clickable">
+                            <button type="button" id="removeCourse" data-href="@routes.HomeController.adminPanelSingleCourseRemove(course.id)" class="btn btn-danger float-right clickable">
                                 <i class="fas fa-trash" aria-hidden="true"></i>
                             </button>
                         </td>

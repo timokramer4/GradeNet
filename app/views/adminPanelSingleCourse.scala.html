@@ -175,16 +175,16 @@
                 <tbody>
                 @for(module <- courseModuleList) {
                     <tr>
-                        <td class="align-middle">@Module.getString(module, "name")</td>
-                        <td class="align-middle">@Module.getString(module, "semester")</td>
+                        <td class="align-middle">@module.name</td>
+                        <td class="align-middle">@module.semester</td>
                         <td class="align-middle">
-                            <button type="button" id="removeModule" data-href="@routes.HomeController.adminPanelSingleModuleRemove(id, Module.getId(module))" class="btn btn-danger float-right clickable">
+                            <button type="button" id="removeModule" data-href="@routes.HomeController.adminPanelSingleModuleRemove(id, module.id)" data-sort="1" data-sort-type="ASC" class="btn btn-danger float-right clickable">
                                 <i class="fas fa-trash"></i>
                             </button>
                             <button type="button" id="editModuleBtn"
-                            data-id='@Module.getString(module, "id")'
-                            data-name='@Module.getString(module, "name")'
-                            data-semester='@Module.getString(module, "semester")'
+                            data-id='@module.id'
+                            data-name='@module.name'
+                            data-semester='@module.semester'
                             class="btn btn-warning float-right mr-2" data-toggle="modal" data-target="#editModule">
                                 <i class="fas fa-pencil-alt"></i>
                             </button>

@@ -624,9 +624,9 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
           try {
             ConfigFactory.load().getString("db.default.driver") match {
               case "com.mysql.jdbc.Driver" => // MySQL
-                SQL(s"""SELECT * FROM $moduleEntity WHERE course_id = $courseId""").as(moduleParser.*)
+                SQL(s"""SELECT * FROM $moduleEntity WHERE course_id = $courseId ORDER BY semester ASC""").as(moduleParser.*)
               case "org.postgresql.Driver" => // PostgreSQL
-                SQL(s"""SELECT * FROM "$moduleEntity" WHERE course_id = $courseId""").as(moduleParser.*)
+                SQL(s"""SELECT * FROM "$moduleEntity" WHERE course_id = $courseId ORDER BY semester ASC""").as(moduleParser.*)
             }
           }
           catch {

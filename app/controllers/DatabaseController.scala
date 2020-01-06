@@ -66,37 +66,37 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       ConfigFactory.load().getString("db.default.driver") match {
         case "com.mysql.jdbc.Driver" => // MySQL
           var success: Boolean = SQL(
-            s"""CREATE TABLE IF NOT EXISTS "$courseEntity" (
+            s"""CREATE TABLE IF NOT EXISTS $courseEntity (
                id SERIAL PRIMARY KEY,
                name VARCHAR(255) NOT NULL,
                po INT(11) NOT NULL,
                gradiation INT NOT NULL,
-               semester INT NOT NULL
+               semester INT(11) NOT NULL
                );""").execute()
           success = SQL(
             s"""CREATE TABLE IF NOT EXISTS $appreciationEntity (
-              id SERIAL PRIMARY KEY ON DELETE CASCADE,
+              id SERIAL PRIMARY KEY,
               firstName VARCHAR(255) NOT NULL,
               lastName VARCHAR(255) NOT NULL,
               email VARCHAR(255) NOT NULL,
               matrNr INT(11) NOT NULL,
               university VARCHAR(255) NOT NULL,
               state INT(11) NOT NULL,
-              currentpo SERIAL REFERENCES $courseEntity,
-              newpo SERIAL REFERENCES $courseEntity,
+              currentpo BIGINT REFERENCES $courseEntity,
+              newpo BIGINT REFERENCES $courseEntity,
               password VARCHAR(255) NOT NULL
               );""").execute()
           success = SQL(
             s"""CREATE TABLE IF NOT EXISTS $moduleEntity (
                id SERIAL PRIMARY KEY,
-               name VARCHAR NOT NULL,
+               name VARCHAR(255) NOT NULL,
                semester INT(11) NOT NULL,
-               course_id SERIAL REFERENCES $courseEntity
+               course_id BIGINT REFERENCES $courseEntity
                );""").execute()
           success = SQL(
-            s"""CREATE TABLE IF NOT EXISTS "$appreciationModulesEntity" (
-               appreciation_id SERIAL REFERENCES $appreciationEntity ON DELETE CASCADE,
-               module_id SERIAL REFERENCES $moduleEntity ON DELETE CASCADE,
+            s"""CREATE TABLE IF NOT EXISTS $appreciationModulesEntity (
+               appreciation_id BIGINT REFERENCES $appreciationEntity ON DELETE CASCADE,
+               module_id BIGINT REFERENCES $moduleEntity ON DELETE CASCADE,
                appreciationname VARCHAR(255) NOT NULL
                );""").execute()
           success =
@@ -127,8 +127,8 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
               matrNr INT NOT NULL,
               university VARCHAR NOT NULL,
               state INT NOT NULL,
-              currentpo SERIAL REFERENCES $courseEntity,
-              newpo SERIAL REFERENCES $courseEntity,
+              currentpo BIGINT REFERENCES $courseEntity,
+              newpo BIGINT REFERENCES $courseEntity,
               password VARCHAR NOT NULL
               );""").execute()
           success = SQL(
@@ -136,12 +136,12 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                id SERIAL PRIMARY KEY,
                name VARCHAR NOT NULL,
                semester INT NOT NULL,
-               course_id SERIAL REFERENCES $courseEntity
+               course_id BIGINT REFERENCES $courseEntity
                );""").execute()
           success = SQL(
             s"""CREATE TABLE IF NOT EXISTS "$appreciationModulesEntity" (
-               appreciation_id SERIAL REFERENCES $appreciationEntity ON DELETE CASCADE,
-               module_id SERIAL REFERENCES $moduleEntity ON DELETE CASCADE,
+               appreciation_id BIGINT REFERENCES $appreciationEntity ON DELETE CASCADE,
+               module_id BIGINT REFERENCES $moduleEntity ON DELETE CASCADE,
                appreciationname VARCHAR NOT NULL
                );""").execute()
           success =

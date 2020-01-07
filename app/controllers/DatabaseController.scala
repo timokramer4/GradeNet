@@ -231,7 +231,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
    * @param id
    * @param decrement
    */
-  def removeAppreciation(id: Long, decrement: Boolean): Unit = {
+  def removeAppreciation(id: Long, decrement: Boolean): Long = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val amountDelete: Int =
@@ -264,6 +264,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
                 };""").execute()
         }
       }
+      return amountDelete
     }
   }
 
@@ -421,7 +422,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
    * @param id
    * @return
    */
-  def removeCourse(id: Int): Int = {
+  def removeCourse(id: Int): Long = {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>
@@ -570,14 +571,14 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
         var amountDelete: Int = 0
         ConfigFactory.load().getString("db.default.driver") match {
           case "com.mysql.jdbc.Driver" => // MySQL
-            val m:List[Int] = SQL(s"""SELECT appreciation_id FROM $appreciationModulesEntity WHERE module_id = $id""").as(scalar[Int].*)
-            m.foreach(i =>{
+            val m: List[Int] = SQL(s"""SELECT appreciation_id FROM $appreciationModulesEntity WHERE module_id = $id""").as(scalar[Int].*)
+            m.foreach(i => {
               SQL(s"""DELETE FROM $appreciationEntity WHERE id = $i;""").executeUpdate()
             })
             amountDelete = SQL(s"""DELETE FROM $moduleEntity WHERE id = $id;""").executeUpdate()
           case "org.postgresql.Driver" => // PostgreSQL
-            val m:List[Int] = SQL(s"""SELECT appreciation_id FROM $appreciationModulesEntity WHERE module_id = $id""").as(scalar[Int].*)
-            m.foreach(i =>{
+            val m: List[Int] = SQL(s"""SELECT appreciation_id FROM $appreciationModulesEntity WHERE module_id = $id""").as(scalar[Int].*)
+            m.foreach(i => {
               SQL(s"""DELETE FROM $appreciationEntity WHERE id = $i;""").executeUpdate()
             })
             amountDelete = SQL(s"""DELETE FROM "$moduleEntity" WHERE id = $id;""").executeUpdate()

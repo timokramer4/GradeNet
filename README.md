@@ -8,13 +8,13 @@ https://www.scala-sbt.org/download.html
 
 After successful installation, start the respective development environment of your choice. We're using [IntelliJ](https://www.jetbrains.com/idea/download/index.html#section=windows) from NetbRains for this tutorial. If you pulled the most current version of the application over the familiar Git commands, you can start integrating with IntelliJ. 
 
-![Welcome page IntelliJ](https://gitlab.lorenzen-it.de/timo75/GradeNet/wikis/uploads/5cdbeccfd29a9f897ca8f9014cfcbfcb/img01.png)
+![Welcome page IntelliJ](https://i.ibb.co/V0F7WHm/img01.png)
 To do this, **start the program** and, before you start importing the project, call up the **plugin settings** at the bottom right by navigating in `Configure> Plugins`. 
 
-![Scala plugin](https://gitlab.lorenzen-it.de/timo75/GradeNet/wikis/uploads/ed3de2395a3d661874281a9a45676083/img02.png)
+![Scala plugin](https://i.ibb.co/zJZLGKT/img02.png)
 It should open the following window, here you are looking for the plugin "**Scala**" and **install this**. After successful installation, it may be **necessary to restart** the development environment. After doing this, please start the IDE again and select on the start page under "**Import**" the directory path where you saved the project.
 
-This completes the integration of the project. The project can now be compiled in the terminal with the command `sbt compile` and executed with command `sbt run`.
+This completes the integration of the project. The project can now be compiled in the terminal with the command `sbt compile` and executed with command `sbt run`. Alternatively, a run configuration can be created in the IntelliJ development environment. To do this, a new configuration must first be created under `Run>Edit Configurations`. The pre-made template "Play 2 App" can be used here.
 
 ## Prepare the database
 The application uses a database, here is the choice between a **[MySQL](https://www.mysql.com/de/)** and a **[PostgreSQL](https://www.postgresql.org/)** database. Standard is a PostgreSQL database. If you prefer to use a MySQL database instead, please read the section "[Switch database or change database access](#switch-database-or-change-database-access)" below.

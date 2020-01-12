@@ -1,0 +1,114 @@
+@*
+* This template is called from the `index` template. This template
+* handles the rendering of the page header and body tags. It takes
+* two arguments, a `String` for the title of the page and an `Html`
+* object to insert into the body of the page.
+*@
+@(title: String, content: Html)(implicit session: Session, request: Request[AnyContent], flash: Flash)
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <title>GradeNet - @title</title>
+
+            <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+            <!-- FontAwesome CSS -->
+        <script src="https://kit.fontawesome.com/fb79a9de4b.js" crossorigin="anonymous"></script>
+
+            <!-- jQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+            <!-- DataTables CSS + JS -->
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css">
+        <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+        <script src="/assets/javascripts/dataTables.js"></script>
+        <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
+        <script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+
+            <!-- Custom CSS -->
+        <link rel="stylesheet" href="/assets/css/custom.css">
+    </head>
+    <body>
+            <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <a class="navbar-brand" href="/">GradeNet</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="@routes.HomeController.home">Startseite <span class="sr-only">
+                            (aktuell)</span></a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="mode"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Antrag erstellen
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="mode">
+                            <a class="dropdown-item" href="@routes.HomeController.appreciationAll">
+                                Wechsel in neue Prüfungsordnung</a>
+                            <a class="dropdown-item" href="@routes.HomeController.appreciationSingle">
+                                Anerkennung einzelner Studienleistungen</a>
+                        </div>
+                    </li >
+                    @if(session.get("admin")) {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="admin"
+                            role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Admin Bereich
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="admin">
+                                <a class="dropdown-item" href="@routes.HomeController.adminPanel">Anträge</a>
+                                <a class="dropdown-item" href="@routes.HomeController.adminPanelCourses">Studiengänge</a>
+                            </div>
+                        </li>
+                    }
+                </ul>
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                    @if(session.get("admin")) {
+                        <a href="@routes.HomeController.logout">
+                            <button class="btn btn-outline-danger my-2 my-sm-0" type="submit">
+                                <i class="fas fa-sign-out-alt"></i>
+                                    &nbsp;&nbsp;Logout
+                            </button>
+                        </a>
+                    } else {
+                        <a href="@routes.HomeController.adminPanel">
+                            <button class="btn btn-outline-danger my-2 my-sm-0" type="submit">
+                                <i class="fas fa-sign-in-alt"></i>
+                                    &nbsp;&nbsp;Admin-Panel
+                            </button>
+                        </a>
+                    }
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+            <!-- Page Content -->
+        <div class="container mt-4 mb-3">
+        @content
+        </div>
+
+            <!-- Custom JS -->
+        <script src="/assets/javascripts/custom.js"></script>
+
+            <!-- Bootstrap JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+    </body>
+
+</html>

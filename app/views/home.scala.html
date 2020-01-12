@@ -1,0 +1,65 @@
+@()(implicit flash: Flash)
+<!-- Page Content -->
+<div class="row">
+    <div class="col-lg-12">
+
+            <!-- Flash error messages -->
+        @if(!flash.isEmpty) {
+            <div class="alert alert-dismissible fade show" id="alert" role="alert">
+                @if(flash.get("error")) {
+                    <script>document.getElementById("alert").classList.add("alert-danger")</script>
+                } else if(flash.get("success")){
+                <script>document.getElementById("alert").classList.add("alert-success")</script>
+                }
+                @{
+                    if(flash.get("error")) {
+                        flash.get("error")
+                    } else if(flash.get("success")) {
+                        flash.get("success")
+                    }
+                }
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+        }
+                <!-- Breadcrumb navigation -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item active" aria-current="page"><a href="/">Startseite</a></li>
+                </ol>
+            </nav>
+
+                <!-- Page content -->
+            <h1 class="mt">Antrag auf Notenanrechnung</h1>
+            <p class="">
+            Bitte wählen Sie einen der folgenden Antragsmodi aus, der zu Ihrem Anliegen passt:
+            </p>
+
+            <br>
+            <div class="row">
+                <div class="col-sm-6 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Anerkennung einzelner Studienleistungen</h5>
+                            <p class="card-text">
+                            Sie haben den Studiengang oder sogar die Hochschule/Uni gewechselt und wollen sich
+                                einzelne Leistungen aus Ihrem ehemaligen Studium anrechnen lassen? Dann sollten Sie diese Art des Antrags verwenden.</p>
+                            <a href="@routes.HomeController.appreciationSingle" class="btn btn-primary">
+                            Antrag erstellen&nbsp;&nbsp;<i class="fas fa-clipboard-check"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Anerkennung beim Wechsel in neue Prüfungsordnung</h5>
+                            <p class="card-text">
+                            Wenn es notwendig sein sollte, dass Sie auf eine neuere Prfüngsordnung umsteigen
+                                müssen, dann ist dieses Verfahren das Richtige für Ihr Anliegen.</p>
+                            <a href="@routes.HomeController.appreciationAll" class="btn btn-primary">
+        Antrag erstellen&nbsp;&nbsp;<i class="fas fa-clipboard-check"></i></a>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+</div>

@@ -1,0 +1,21 @@
+dt {
+    font-weight: 400;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.custom-file-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    cursor: pointer;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}

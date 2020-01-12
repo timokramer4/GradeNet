@@ -1,0 +1,209 @@
+@import models.Course._
+@import controllers.Forms.CourseForm._
+@import controllers.Forms.ModuleForm._
+@import java.util.Calendar
+@(id: Int, filledCourseForm: Form[CourseData], course: Course, courseModuleList: List[Module])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, flash: Flash)
+
+<!-- Modal -->
+<div class="modal fade" id="editModule" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @helper.form(action = routes.HomeController.adminPanelSingleModuleEdit(course.id, 0), Symbol("id") -> "moduleEditForm", Symbol("enctype") -> "multipart/form-data") {
+                    @helper.CSRF.formField
+                    <div class="form-row">
+                        @helper.inputText(moduleForm("moduleName"),
+                            Symbol("_class") -> "form-group col-md-12",
+                            Symbol("class") -> "form-control",
+                            Symbol("_showConstraints") -> false,
+                            Symbol("_label") -> "Name des Studiengangs",
+                            Symbol("placeholder") -> "Studiengang",
+                            Symbol("required") -> "")
+                        @helper.inputText(moduleForm("moduleSemester"),
+                            Symbol("_class") -> "form-group col-md-12",
+                            Symbol("class") -> "form-control",
+                            Symbol("_showConstraints") -> false,
+                            Symbol("_label") -> "Semester",
+                            Symbol("placeholder") -> "Semester",
+                            Symbol("type") -> "number",
+                            Symbol("min") -> "1",
+                            Symbol("max") -> course.semester,
+                            Symbol("required") -> "")
+                    </div>
+                    <div style="text-align: right;">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Schließen</button>
+                        <button type="submit" id="editModule" class="btn btn-success">Speichern</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Content -->
+<div class="row">
+    <div class="col-lg-12">
+            <!-- Page content -->
+        <div class="input-group mb-2 align-items-center">
+            <div class='btn-toolbar pull-left' style="margin-right: 1em;">
+                <a href="@routes.HomeController.adminPanelCourses()" class="btn btn-primary" role="button">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </div>
+            <h1 class="mr-3">@filledCourseForm.data.get("name") @filledCourseForm.data.get("po")
+                - @Course.getGraduation(filledCourseForm.data.get("graduation").getOrElse("-1"))</h1>
+        </div>
+
+        <br>
+        @if(!flash.isEmpty) {
+            <div class="alert alert-dismissible fade show" id="alert" role="alert">
+                @if(flash.get("error")) {
+                    <script>document.getElementById("alert").classList.add("alert-danger")</script>
+                } else if(flash.get("success")){
+                <script>document.getElementById("alert").classList.add("alert-success")</script>
+                }
+                @{
+                    if(flash.get("error")) {
+                        flash.get("error")
+                    } else if(flash.get("success")) {
+                        flash.get("success")
+                    }
+                }
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+        }
+
+        <h3>"@filledCourseForm.data.get("name") @filledCourseForm.data.get("po") - @Course.getGraduation(filledCourseForm.data.get("graduation").getOrElse("-1"))" bearbeiten</h3>
+        @helper.form(action = routes.HomeController.adminPanelSingleCourseEdit(id), Symbol("enctype") -> "multipart/form-data") {
+            @helper.CSRF.formField
+            <div class="form-row">
+                @helper.inputText(filledCourseForm("name"),
+                    Symbol("_class") -> "form-group col-md-4",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Name des Studiengangs",
+                    Symbol("placeholder") -> "Studiengang",
+                    Symbol("required") -> "")
+                @helper.inputText(filledCourseForm("po"),
+                    Symbol("_class") -> "form-group col-md-2",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Prüfungsordnung",
+                    Symbol("placeholder") -> "Prüfungsordnung",
+                    Symbol("type") -> "number",
+                    Symbol("min") -> (Calendar.getInstance.get(Calendar.YEAR) - 10),
+                    Symbol("max") -> Calendar.getInstance.get(Calendar.YEAR),
+                    Symbol("required") -> "")
+                @helper.input(filledCourseForm("graduation"),
+                    Symbol("_class") -> "form-group col-md-2",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Abschluss",
+                    Symbol("required") -> "") { (id, name, value, args) =>
+                    <select type="text" name="@name" id="@id" @toHtmlArgs(args)>
+                        <option value="0" @if(filledCourseForm.data.get("graduation").getOrElse("null") == "0") {selected}>Bachelor</option>
+                        <option value="1" @if(filledCourseForm.data.get("graduation").getOrElse("null") == "1") {selected}>Master</option>
+                    </select>
+                }
+                @helper.inputText(filledCourseForm("semester"),
+                    Symbol("_class") -> "form-group col-md-2",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Anzahl der Fachsemester",
+                    Symbol("placeholder") -> "Semester",
+                    Symbol("type") -> "number",
+                    Symbol("min") -> "3",
+                    Symbol("max") -> "7",
+                    Symbol("required") -> "")
+                <div class="form-group col-md-2 d-flex flex-column">
+                    <button type="submit" id="addModule" class="btn btn-success btn-block mt-auto mb-2">Speichern</button>
+                </div>
+            </div>
+        }
+
+        <br>
+        <hr>
+        <br>
+
+        <h3>Neues Modul anlegen</h3>
+        @helper.form(action = routes.HomeController.adminPanelSingleModuleCreate(id), Symbol("enctype") -> "multipart/form-data") {
+            @helper.CSRF.formField
+            <div class="form-row">
+                @helper.inputText(moduleForm("moduleName"),
+                Symbol("_class") -> "form-group col-md-5",
+                Symbol("class") -> "form-control",
+                Symbol("_showConstraints") -> false,
+                Symbol("_label") -> "Name des Moduls",
+                Symbol("placeholder") -> "Modul",
+                Symbol("required") -> "")
+                @helper.inputText(moduleForm("moduleSemester"),
+                Symbol("_class") -> "form-group col-md-5",
+                Symbol("class") -> "form-control",
+                Symbol("_showConstraints") -> false,
+                Symbol("_label") -> "Fachsemester",
+                Symbol("placeholder") -> "Semester",
+                Symbol("type") -> "number",
+                Symbol("min") -> "1",
+                Symbol("max") -> course.semester,
+                Symbol("required") -> "")
+                <div class="form-group col-md-2 d-flex flex-column">
+                    <button type="submit" id="addModule" class="btn btn-success btn-block mt-auto mb-2"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+        }
+
+        <br>
+        <hr>
+        <br>
+
+        <h3>Module "@filledCourseForm.data.get("name") @filledCourseForm.data.get("po") - @getGraduation(filledCourseForm.data.get("graduation").getOrElse("-1"))"</h3>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover nowrap dataTable" with="100%">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">Modul</th>
+                        <th scope="col">Fachsemester</th>
+                        <th scope="col">Aktion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @for(module <- courseModuleList) {
+                    <tr>
+                        <td class="align-middle">@module.name</td>
+                        <td class="align-middle">@module.semester</td>
+                        <td class="align-middle">
+                            <button type="button" id="removeModule" data-href="@routes.HomeController.adminPanelSingleModuleRemove(id, module.id)" data-sort="1" data-sort-type="ASC" class="btn btn-danger float-right clickable">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button type="button" id="editModuleBtn"
+                            data-id='@module.id'
+                            data-name='@module.name'
+                            data-semester='@module.semester'
+                            class="btn btn-warning float-right mr-2" data-toggle="modal" data-target="#editModule">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+
+            <script>
+                    $('[id="editModuleBtn"]').on('click', function () {
+                        // Change form action dynamically
+                        $('#moduleEditForm').attr("action", "@routes.HomeController.adminPanelCourses/@(course.id)/module/edit/" + $(this).data("id"))
+                        // Change form values and parameters
+                        $('#modalTitle').text("Modul: " + $(this).data("name"));
+                        $('#moduleName').val($(this).data("name"));
+                        $("#moduleSemester").val($(this).data("semester"));
+                    });
+            </script>
+        </div>
+    </div>
+</div>

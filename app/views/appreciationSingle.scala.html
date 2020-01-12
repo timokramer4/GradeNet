@@ -1,0 +1,238 @@
+@import controllers.Forms.AppreciationForm
+@(aFormSingle: Form[AppreciationForm.Single], uniList: List[(String, String)], moduleList: List[(String, String)], courseList: List[(String, String)])(implicit requestHeader: RequestHeader, messagesProvider: MessagesProvider, pageTitle: String = "Anerkennung einzelner Studienleistungen", flash: Flash)
+
+<div class="row">
+    <div class="col-lg-12">
+            <!-- Breadcrumb navigation -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Startseite</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@pageTitle</li>
+            </ol>
+        </nav>
+
+            <!-- Page content -->
+        <h1 class="mt">@pageTitle</h1>
+
+        <br>
+        @if(!flash.isEmpty) {
+            <div class="alert alert-dismissible fade show" id="alert" role="alert">
+                @if(flash.get("error")) {
+                    <script>document.getElementById("alert").classList.add("alert-danger")</script>
+                } else if(flash.get("success")){
+                <script>document.getElementById("alert").classList.add("alert-success")</script>
+                }
+                @{
+                    if(flash.get("error")) {
+                        flash.get("error")
+                    } else if(flash.get("success")) {
+                        flash.get("success")
+                    }
+                }
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+        }
+        @helper.form(action = routes.HomeController.appreciationSinglePost(), Symbol("enctype") -> "multipart/form-data") {
+            @helper.CSRF.formField
+            <div class="form-row">
+                @helper.inputText(aFormSingle("firstName"),
+                    Symbol("_class") -> "form-group col-md-6",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Vorname",
+                    Symbol("placeholder") -> "Vorname",
+                    Symbol("required") -> "")
+                @helper.inputText(aFormSingle("lastName"),
+                    Symbol("_class") -> "form-group col-md-6",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Nachname",
+                    Symbol("placeholder") -> "Nachname",
+                    Symbol("required") -> "")
+            </div>
+            <div class="form-row">
+                @helper.inputText(aFormSingle("matrNr"),
+                    Symbol("_class") -> "form-group col-md-2",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("_label") -> "Matrikelnummer",
+                    Symbol("placeholder") -> "Matrikelnr.",
+                    Symbol("type") -> "number",
+                    Symbol("min") -> "100000",
+                    Symbol("max") -> "999999",
+                    Symbol("required") -> "")
+                @helper.inputText(aFormSingle("email"),
+                    Symbol("_class") -> "form-group col-md-5",
+                    Symbol("class") -> "form-control",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("type") -> "email",
+                    Symbol("_label") -> "Email",
+                    Symbol("placeholder") -> "Email",
+                    Symbol("required") -> "")
+                @helper.select(aFormSingle("university"), uniList,
+                    Symbol("_class") -> "form-group col-md-5",
+                    Symbol("class") -> "form-control",
+                    Symbol("_label") -> "Hochschule/Uni",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("required") -> "")
+            </div>
+            <div class="form-row">
+                @helper.select(aFormSingle("course"), courseList,
+                    Symbol("_class") -> "form-group col-md-5",
+                    Symbol("class") -> "form-control",
+                    Symbol("_label") -> "Studiengang",
+                    Symbol("_showConstraints") -> false,
+                    Symbol("required") -> "")
+                <div class="form-group col-md-7">
+                    <label>Notenkonto</label>
+                    <div class="input-group mb-3">
+                        <div class="custom-file">
+                            @helper.inputFile(aFormSingle("gradeFile"),
+                                Symbol("class") -> "custom-file-input",
+                                Symbol("_showConstraints") -> false,
+                                Symbol("_label") -> "",
+                                Symbol("accept") -> ".pdf")
+                            <label class="custom-file-label">Datei auswählen</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="cardHolder">
+                <div class="card text-white bg-dark mb-3 align-middle">
+                    <div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col">Neues Modul</div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @helper.select(aFormSingle("modules[]"), moduleList,
+                            Symbol("_class") -> "form-group",
+                            Symbol("class") -> "form-control",
+                            Symbol("_showConstraints") -> false,
+                            Symbol("_label") -> "Modul",
+                            Symbol("required") -> "")
+                        @helper.inputText(aFormSingle("appreciationName[]"),
+                            Symbol("_class") -> "form-group",
+                            Symbol("class") -> "form-control",
+                            Symbol("_showConstraints") -> false,
+                            Symbol("_label") -> "Modulname",
+                            Symbol("placeholder") -> "Modulname",
+                            Symbol("required") -> "")
+                        <div class="form-group">
+                            <label>Modulbeschreibung</label>
+                            <div class="input-group mb-3">
+                                <div class="custom-file">
+                                    @helper.inputFile(aFormSingle("moduleDescription"),
+                                        Symbol("class") -> "custom-file-input",
+                                        Symbol("_showConstraints") -> false,
+                                        Symbol("_label") -> "",
+                                        Symbol("accept") -> ".pdf",
+                                        Symbol("required") -> "")
+                                    <label class="custom-file-label">Datei auswählen</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="button" id="addModule" class="btn btn-success btn-block">Modul hinzufügen</button>
+            <br>
+            <button type="submit" class="btn btn-primary">Antrag absenden</button>
+        }
+
+        <script>
+                /* Set initial default course at start */
+                var courseId;
+                $.getJSON(`/api/courses`, function (data) {
+                    courseId = data[0].id;
+                    appendModules()
+                });
+
+                /* Append new module */
+                $('#addModule').on("click", function () {
+                    // Append first module card remove button
+                    if ($('.card-header').length == 1 && $('.row.align-items-center')[0].childElementCount < 2) {
+                        var removeBtn = document.createElement("div");
+                        removeBtn.classList = "col";
+                        removeBtn.id = "removeModule"
+                        removeBtn.innerHTML = `<button type="button" id="removeModuleBtn" class="btn btn-danger float-right"><i class="fas fa-minus"></i></button>`;
+                        $('.row.align-items-center')[0].append(removeBtn)
+                    }
+
+                    // Append new module card
+                    var cardHolder = $("#cardHolder");
+                    var card = document.createElement("div")
+                    card.classList = "card text-white bg-dark mb-3 align-middle"
+                    card.innerHTML = `<div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col">Neues Modul</div>
+                            <div class="col" id="removeModule">
+                                <button id="removeModuleBtn" class="btn btn-danger float-right"><i class="fas fa-minus"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @helper.select(aFormSingle("modules[]"), moduleList,
+                            Symbol("_class") -> "form-group",
+                            Symbol("class") -> "form-control",
+                            Symbol("_showConstraints") -> false,
+                            Symbol("_label") -> "Modul",
+                            Symbol("required") -> "")
+                        @helper.inputText(aFormSingle("appreciationName[]"),
+                            Symbol("_class") -> "form-group",
+                            Symbol("class") -> "form-control",
+                            Symbol("_showConstraints") -> false,
+                            Symbol("_label") -> "Modulname",
+                            Symbol("placeholder") -> "Modulname",
+                            Symbol("required") -> "")
+                        <div class="form-group">
+                            <label>Modulbeschreibung</label>
+                            <div class="input-group mb-3">
+                                <div class="custom-file">
+                                    @helper.inputFile(aFormSingle("moduleDescription"),
+                                        Symbol("class") -> "custom-file-input",
+                                        Symbol("_showConstraints") -> false,
+                                        Symbol("_label") -> "",
+                                        Symbol("accept") -> ".pdf",
+                                        Symbol("required") -> "")
+                                    <label class="custom-file-label">Datei auswählen</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                    cardHolder.append(card);
+                    appendModules();
+                });
+
+                /* Remove module click event */
+                $('body').on("click", 'button#removeModuleBtn', function (event) {
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+                    if ($(".card").length > 1) {
+                        $(this).parent().parent().parent().parent().remove();
+
+                        if ($(".card").length == 1) {
+                            $("div#removeModule").remove()
+                        }
+                    }
+                });
+
+                /* Change course trigger event */
+                $('[id="course"]').on('change', function () {
+                    courseId = $(this).val();
+                    appendModules();
+                });
+
+                /* Refresh module list dynamically depending on selected course */
+                function appendModules() {
+                    var moduleSelect = $('[id="modules_"]');
+                    $.getJSON(`/api/modules/${courseId}`, function (data) {
+                        moduleSelect.empty();
+                        $.each(data, function (key, val) {
+                            moduleSelect.append(`<option value="${val.id}">[${val.semester}. Semester] ${val.name}</option>`);
+                        });
+                    });
+                }
+        </script>
+    </div>
+</div>

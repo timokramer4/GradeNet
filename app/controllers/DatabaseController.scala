@@ -178,24 +178,28 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
       var id: Option[Long] = Some(0)
       ConfigFactory.load().getString("db.default.driver") match {
         case "com.mysql.jdbc.Driver" => // MySQL
-          if (newPO == None) {
-            id = SQL(s"""INSERT INTO $appreciationEntity (firstName, lastName, email, matrNr, university, currentpo, newpo, password, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {currentPO}, {newPO}, {password}, 0)""")
-              .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "currentPO" -> currentPO, "newPO" -> currentPO, "password" -> passwordHash)
-              .executeInsert()
+          id = SQL(s"""INSERT INTO $appreciationEntity (firstName, lastName, email, matrNr, university, currentpo, password, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {currentPO}, {password}, 0)""")
+            .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "currentPO" -> currentPO, "password" -> passwordHash)
+            .executeInsert()
+
+          if (newPO.isDefined) {
+            SQL(s"""UPDATE "$appreciationEntity" SET newpo = ${newPO.get} WHERE id = ${id.get}""")
+              .executeUpdate()
           } else {
-            id = SQL(s"""INSERT INTO $appreciationEntity (firstName, lastName, email, matrNr, university, currentpo, newpo, password, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {currentPO}, {newPO}, {password}, 0)""")
-              .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "currentPO" -> currentPO, "newPO" -> newPO.get, "password" -> passwordHash)
-              .executeInsert()
+            SQL(s"""UPDATE "$appreciationEntity" SET newpo = $currentPO WHERE id = ${id.get}""")
+              .executeUpdate()
           }
         case "org.postgresql.Driver" => // PostgreSQL
-          if (newPO == None) {
-            id = SQL(s"""INSERT INTO "$appreciationEntity" (firstName, lastName, email, matrNr, university, currentpo, newpo, password, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {currentPO}, {newPO}, {password}, 0)""")
-              .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "currentPO" -> currentPO, "newPO" -> currentPO, "password" -> passwordHash)
+          id = SQL(s"""INSERT INTO "$appreciationEntity" (firstName, lastName, email, matrNr, university, currentpo, password, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {currentPO}, {password}, 0)""")
+              .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "currentPO" -> currentPO, "password" -> passwordHash)
               .executeInsert()
+
+          if (newPO.isDefined) {
+            SQL(s"""UPDATE $appreciationEntity SET newpo = ${newPO.get} WHERE id = ${id.get}""")
+              .executeUpdate()
           } else {
-            id = SQL(s"""INSERT INTO "$appreciationEntity" (firstName, lastName, email, matrNr, university, currentpo, newpo, password, state) VALUES ({firstName}, {lastName}, {email}, {matrNr}, {university}, {currentPO}, {newPO}, {password}, 0)""")
-              .on("firstName" -> firstName, "lastName" -> lastName, "email" -> email, "matrNr" -> matrNr, "university" -> university, "currentPO" -> currentPO, "newPO" -> newPO.get, "password" -> passwordHash)
-              .executeInsert()
+            SQL(s"""UPDATE $appreciationEntity SET newpo = $currentPO WHERE id = ${id.get}""")
+              .executeUpdate()
           }
       }
       return id.getOrElse(0)
@@ -209,7 +213,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
    * @param state
    * @return
    */
-  def changeAppreciationState(id: Int, state: Int): Long = {
+  def changeAppreciationState(id: Int, state: Int): Int = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       var amountUpdated: Int = 0
@@ -231,7 +235,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
    * @param id
    * @param decrement
    */
-  def removeAppreciation(id: Long, decrement: Boolean): Long = {
+  def removeAppreciation(id: Long, decrement: Boolean): Int = {
     checkDBIntegrity()
     db.withConnection { implicit c =>
       val amountDelete: Int =
@@ -422,7 +426,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
    * @param id
    * @return
    */
-  def removeCourse(id: Int): Long = {
+  def removeCourse(id: Int): Int = {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>
@@ -564,7 +568,7 @@ class DatabaseController @Inject()(dbapi: DBApi, cc: ControllerComponents) {
    * @param id
    * @return
    */
-  def removeModule(id: Int): Long = {
+  def removeModule(id: Int): Int = {
     checkDBIntegrity()
     db.withConnection {
       implicit c =>

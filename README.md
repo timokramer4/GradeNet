@@ -27,7 +27,7 @@ Both databases must have at least one database named `Gradenet`. This must be ac
 | **PostgreSQL** | postgres | postgres |
 
 ### Switch database or change database access
-If you want to switch between MySQL and PostgreSQL database, you can do this in `application.conf` in the `db.default` section. Comment out the unused database! Also changing the access data happens there. To change the username and password you only have to change the variables `default.username` and `default.password`.
+If you want to switch between MySQL and PostgreSQL database, you can do this in `conf/application.conf` in the `db.default` section. Comment out the unused database! Also changing the access data happens there. To change the username and password you only have to change the variables `default.username` and `default.password`.
 
 ```
 db {
@@ -39,3 +39,19 @@ db {
     [...]
 }
 ```
+## Mail server settings and email notifications
+
+To activate the integrated mail notification, the access data of the mail provider to be used must be changed. The change can also be made in the `conf/application.conf`, navigate to the end of the file in the `player.mail` area. This looks as follows and can be edited accordingly (the following section has been reduced to the essential parts for a successful mail transfer):
+
+```
+play.mailer {
+  host = "YOUR_MAIL_SERVER_URL"
+  port = YOUR_SMTP_PORT
+  ssl = yes
+  tls = yes
+  tlsRequired = yes
+  user = "YOUR_SMTP_USERNAME"
+  password = "YOUR_SMTP_PASSWORD"
+}
+```
+You'll receive the data necessary for this configuration through your mail provider and the password you set.
